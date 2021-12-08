@@ -1,0 +1,37 @@
+
+<ul class="comments">
+   {% for request in requests %}
+   <li class="comment">
+       <div class="comment-thumbnail">
+           <a href="{{ url_for('.user', username=request.username) }}">
+               <img class="img-rounded profile-thumbnail" src="{{ request.gravatar(size=40) }}">
+           </a>
+       </div>
+       <div class="comment-content">
+           <div class="comment-date">{{ moment(request.member_since).fromNow() }}</div>
+           <div class="comment-author"><a href="{{ url_for('.user', username=request.username) }}">{{ request.username }}</a>
+           {% if request.role_id==3 %} [Admin] 
+           {% else %}
+               {% set moderate_button = "Give Moderate" %}
+               {% set class = "default"%}
+               {% if request.role_id==2 %} [Moderate] 
+               {% set moderate_button = "Del Moderate" %}
+               {% set class = "danger"%}
+               {% endif %}
+
+           </div>
+               {% if admin %}
+                 <br>
+                 {% if request.confirmed == 0 %}
+                 <a class="btn btn-default btn-xs" href="{{ url_for('.confirm_enable', id=request.id) }}">Enable</a>
+                 {% else %}
+                 <a class="btn btn-danger btn-xs" href="{{ url_for('.confirm_disable', id=request.id) }}">Disable</a>
+                 {% endif %}
+                 <a class="btn btn-{{ class }} btn-xs" href="{{ url_for('.set_moderate', id=request.id) }}">{{ moderate_button }}</a>
+                 <a class="btn btn-danger btn-xs" href="{{ url_for('.delete', id=request.id) }}">Delete</a>
+               {% endif %}
+           {% endif %}
+       </div>
+   </li>
+   {% endfor %}
+</ul>
