@@ -7,49 +7,46 @@
             </a>
         </div>
         <div class="post-content">
-            <div class="post-date">{{ moment(post.timestamp).fromNow() }}</div>
+            <div class="post-date">Posted: {{ moment(post.timestamp).fromNow() }}</div>
             <div class="post-author">
                 <a href="{{ url_for('.user', username=post.author.username) }}">{{ post.author.username }} </a>
                 {% if post.author.name %} {{ post.author.name }} {% endif %}
                 {% if post.author.is_administrator() %} [Admin] {% endif %}
             </div>
+            <br>
             <div class="post-body">
               {% if post.body_html %}
-                {% if post.body_html | length >= 100 %}
-                    {% for line in range(7) %}
+                {% if post.body_html.split("\n") | length > 8 %}
+                    {% for line in range(8) %}
                     	{{ post.body_html.split("\n")[line] | safe }}
                     {% endfor%}
                     <a href="{{ url_for('.post', id=post.id) }}">Read more...</a>
                  {% else%}
-                 	{{ post.body_html| safe }} [END] <br>
-                 	<a href="{{ url_for('.post', id=post.id) }}">Comment</a>
+                 	{{ post.body| safe }}<br>
                 {% endif %}
               {% else %}
                 {{ post.body }}
               {% endif %}
             </div>
             <div class="post-footer">
-              {% if current_user == post.author %}
+              {% if current_user == post.author or current_user.is_administrator() %}
               <a href="{{ url_for('.edit', id=post.id) }}">
-                <span class="label label-primary">Edit</span>
+                <span class="label label-warning">Edit</span>
               </a>
-              <a href="{{ url_for('.edit', id=post.id) }}">
-                <span class="label label-primary">Delete</span>
+              <a href="{{ url_for('main.delete_post', id=post.id) }}">
+                <span class="label label-danger">Delete</span>
               </a>
               {% endif %}
               {% if current_user.is_administrator() %}
               <a href="{{ url_for('.edit', id=post.id) }}">
-                <span class="label label-primary">Edit [Admin]</span>
-              </a>
-              <a href="{{ url_for('.edit', id=post.id) }}">
-                <span class="label label-primary">Delete [Admin]</span>
+                <span class="label label-danger">Edit [Admin]</span>
               </a>
               {% endif %}
               <a href="{{ url_for('.post', id=post.id) }}">
                 <span class="label label-default">Permalink</span>
               </a>
               <a href="{{ url_for('.post', id=post.id) }}#comments">
-                <span class="label label-primary">{{ post.comments.count() }} Comments</span>
+                <span class="label label-success">{{ post.comments.count() }} Comments</span>
               </a>
             </div>
         </div>

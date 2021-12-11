@@ -32,5 +32,5 @@
 {% block scripts %}
 {{ super() }}
 {{ ckeditor.load() }}
-{{ pagedown.include_pagedown() }}
+{{ ckeditor.config(name='body') }}
 {% endblock %}

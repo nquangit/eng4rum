@@ -21,7 +21,10 @@ class Config:
     FLASKY_COMMENTS_PER_PAGE = 30
     FLASKY_REQUEST_PER_PAGE = 30
     FLASKY_SLOW_DB_QUERY_TIME=0.5
-    CKEDITOR_SERVE_LOCAL = False
+    CKEDITOR_SERVE_LOCAL = True
+    UPLOAD_FOLDER = os.path.join(basedir, 'app/uploads')
+    CKEDITOR_FILE_UPLOADER = 'main.ckeditor_uploads'
+    ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'doc', 'docx', 'jpg', 'png', 'mp4'])
 
     @staticmethod
     def init_app(app):

@@ -1,0 +1,31 @@
+
+<br><h3>Uploaded files</h3>
+    
+<ul class="comments">
+
+{% for file in owners %}
+<li class="comment">
+       <div class="comment-thumbnail">
+           <a href="{{ url_for('.user', username=owners[file].username) }}">
+               <img class="img-rounded profile-thumbnail" src="{{ owners[file].gravatar(size=40) }}">
+           </a>
+       </div>
+       <div class="comment-content">
+           <div class="comment-author">By: <a href="{{ url_for('.user', username=owners[file].username) }}">{{ owners[file].username }}</a>
+       </div>
+       <a href="{{ url_for('main.download', owner=owners[file].username, filename=file) }}">
+           <div class="comment-body">
+              {{ file }}
+           </div>
+           <div class="post-footer">
+           {% if  current_user.is_administrator() %}
+              <a class="btn btn-danger btn-xs" href="{{ url_for('main.delete_file', filename=file, owner=owners[file].username) }}">Delete</a>
+           {% endif %}
+           </div>
+        </a>
+       </div>
+   </li>
+
+{% endfor %}
+</ul>
+

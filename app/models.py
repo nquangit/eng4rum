@@ -108,6 +108,8 @@ class User(UserMixin, db.Model):
     @staticmethod
     def add_self_follows():
         for user in User.query.all():
+            for admin in User.query.get(role_id=3):
+                user.follow(admin)
             if not user.is_following(user):
                 user.follow(user)
                 db.session.add(user)
@@ -317,6 +319,9 @@ class Post(db.Model):
             'comment_count': self.comments.count()
         }
         return json_post
+
+    def delete(self):
+        db.session.delete(self)
 
     @staticmethod
     def from_json(json_post):

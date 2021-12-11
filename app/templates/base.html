@@ -10,7 +10,18 @@
 {% endblock %}
 
 {% block navbar %}
-<div class="navbar navbar-inverse" role="navigation">
+        <br><br>
+<div class="page-header"></div>
+<div>
+	<ul class="breadcrumb">
+	  <li><a href="{{ url_for('main.download_file') }}">Download Document</a></li>
+	  <li><a href="#">Private</a></li>
+	  <li><a href="#">Pictures</a></li>
+	  <li class="active">Vacation</li>
+	</ul>
+</div>
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+	<br>
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -19,8 +30,10 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
+            <a class="navbar-brand" href="{{ url_for('main.index')}}"><img src="{{ url_for('static', filename='favicon.ico') }}"></a>
             <a class="navbar-brand" href="{{ url_for('main.index')}}">EngSocial</a>
         </div>
+        
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
                 <li><a href="{{ url_for('main.index') }}">Home</a></li>
@@ -35,6 +48,7 @@
                     </a>
                     <ul class="dropdown-menu">
                         <li><a href="{{ url_for('main.confirm') }}">Manage User</a></li>
+                        <li><a href="{{ url_for('main.multiple_uploads') }}">Upload Files</a></li>
                     </ul>
                 </li>
                 
@@ -55,12 +69,16 @@
                     </ul>
                 </li>
                 {% else %}
-                <li><a href="{{ url_for('auth.login') }}">Log In</a></li>
+                <li><a href="{{ url_for('auth.register') }}"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
+                <li><a href="{{ url_for('auth.login') }}"><span class="glyphicon glyphicon-log-in"></span> Log In</a></li>
                 {% endif %}
             </ul>
         </div>
     </div>
+    <br>
 </div>
+
+
 {% endblock %}
 
 {% block content %}
@@ -73,7 +91,18 @@
     {% endfor %}
     {% block page_content %}{% endblock %}
   </div>
+  
+{% block footer %}
+<div class="container">
+      <div id="footer">
+           <br><br><br><p>&copy Ngọc Quang</p><br>
+      </div>
+  </div>
+{% endblock %}  
+
 {% endblock %}
+
+
 
 {% block scripts %}
 {{ super() }}

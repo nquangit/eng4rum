@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}EngSocial - Download{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Download file</h1>
+</div>
+
+<div class="post-tabs">
+    {{ wtf.quick_form(form) }}
+</div>
+
+{% include '_uploads_files.html' %}
+
+{% if pagination %}
+<div class="pagination">
+  {{ macros.pagination_widget(pagination, '.uploads') }}
+</div>
+{% endif %}
+{% endblock %}

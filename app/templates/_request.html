@@ -10,7 +10,7 @@
        <div class="comment-content">
            <div class="comment-date">{{ moment(request.member_since).fromNow() }}</div>
            <div class="comment-author"><a href="{{ url_for('.user', username=request.username) }}">{{ request.username }}</a>
-           {% if request.role_id==3 %} [Admin] 
+           {% if request.is_administrator() %} [Admin] 
            {% else %}
                {% set moderate_button = "Give Moderate" %}
                {% set class = "default"%}
@@ -20,7 +20,7 @@
                {% endif %}
 
            </div>
-               {% if admin %}
+               {% if current_user.is_administrator() %}
                  <br>
                  {% if request.confirmed == 0 %}
                  <a class="btn btn-default btn-xs" href="{{ url_for('.confirm_enable', id=request.id) }}">Enable</a>

@@ -1,6 +1,6 @@
 from flask_ckeditor import CKEditorField
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, BooleanField, SelectField, SubmitField, FileField
+from wtforms import StringField, TextAreaField, BooleanField, SelectField, SubmitField, FileField, MultipleFileField
 from wtforms.validators import Required, Length, Email, Regexp, DataRequired
 from wtforms import ValidationError
 from flask_pagedown.fields import PageDownField
@@ -51,20 +51,24 @@ class CommentForm(FlaskForm):
     body = StringField("Enter your comment", validators=[Required()])
     submit = SubmitField('Submit')
 
-
-
-########################################################################################
-#_____________________________________Developing_______________________________________#
 class UploadForm(FlaskForm):
-    image        = FileField(u'Image File')
-    description  = TextAreaField(u'Image Description')
+    file         = FileField('File', validators=[Required()])
+    submit       = SubmitField('Upload')
 
-    def validate_image(self, field):
+    def validate_file(form, field):
+        if field.data:
+            field.data = re.sub(r'[^a-z0-9_.-]', '_', field.data)
+            
+class MultipleUploadForm(FlaskForm):
+    file         = MultipleFileField('Files', validators=[Required()])
+    submit       = SubmitField('Upload')
+
+    def validate_image(form, field):
         if field.data:
             field.data = re.sub(r'[^a-z0-9_.-]', '_', field.data)
 
-def upload(request):
-    form = UploadForm(request.POST)
-    if form.image.data:
-        image_data = request.FILES[form.image.name].read()
-        open(os.path.join(UPLOAD_PATH, form.image.data), 'w').write(image_data)
+class SearchForm(FlaskForm):
+    search       = StringField("Search")
+    submit       = SubmitField('Search')
+
+
