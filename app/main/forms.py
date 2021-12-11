@@ -1,7 +1,6 @@
 from flask_ckeditor import CKEditorField
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, BooleanField, SelectField, SubmitField, FileField
-from wtforms.fields import MultipleFileField
+from wtforms import StringField, TextAreaField, BooleanField, SelectField, SubmitField, FileField, MultipleFileField
 from wtforms.validators import Required, Length, Email, Regexp, DataRequired
 from wtforms import ValidationError
 from flask_pagedown.fields import PageDownField
@@ -61,7 +60,7 @@ class UploadForm(FlaskForm):
             field.data = re.sub(r'[^a-z0-9_.-]', '_', field.data)
             
 class MultipleUploadForm(FlaskForm):
-    file         = MultipleFileField('Files', validators=[Required()])
+    file         = MultipleFileField('Files', validators=[DataRequired()])
     submit       = SubmitField('Upload')
 
     def validate_image(form, field):
