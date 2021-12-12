@@ -20,7 +20,7 @@ six==1.11.0
 SQLAlchemy==1.1.15
 visitor==0.1.3
 Werkzeug==0.13
-WTForms==2.1
+WTForms==2.2.1
 bleach==2.1.2
 Flask-Login==0.4.1
 Flask-PageDown==0.2.2
