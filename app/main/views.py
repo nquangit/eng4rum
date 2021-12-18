@@ -398,7 +398,6 @@ def get_list_files(filter_file):
     owners = {}
     for filename in onlyfiles:
         own = filename.split('|')[0]
-        #user = User.query.filter_by(username=username).first_or_404()
         if not User.query.filter_by(username=own).first():
             tmp = User.query.filter_by(id=1).first()
         else:
@@ -444,6 +443,7 @@ def download(filename, owner):
 @main.route('/download', methods=['POST', 'GET'])
 def download_file():
     form = SearchForm()
+    print(current_app.config['UPLOAD_FOLDER'])
     filter_file = ""
     if form.validate_on_submit():
         filter_file  = form.search.data
