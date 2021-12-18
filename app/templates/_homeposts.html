@@ -1,6 +1,6 @@
 <ul class="posts">
     {% for post in posts %}
-    <li class="post">
+    <li class="post" id="{{ post.id }}">
         <div class="post-thumbnail">
             <a href="{{ url_for('.user', username=post.author.username) }}">
                 <img class="img-rounded profile-thumbnail" src="{{ post.author.gravatar(size=40) }}">
@@ -25,9 +25,19 @@
                  	{{ post.body| safe }}<br>
                 {% endif %}
               {% else %}
-                {{ post.body }}
+                {{ post.body | safe }}
               {% endif %}
             </div>
+            {% if current_user.is_authenticated %}
+            <div>
+                {% if not current_user.is_liked(post) %}
+                <button id="like_button{{ post.id }}" onclick="like_this('like_button{{ post.id }}', 'like{{ post.id }}', {{ post.liked_post.count() }}, {{ post.id }})" class="btn btn-default">
+                <span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Vote</button>
+                {% else %}
+                <button class="btn btn-success"><span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Voted</button>
+                {% endif %}
+            </div>
+            {% endif %}
             <div class="post-footer">
               {% if current_user == post.author or current_user.is_administrator() %}
               <a href="{{ url_for('.edit', id=post.id) }}">
@@ -53,3 +63,16 @@
     </li>
     {% endfor %}
 </ul>
+
+<script>
+    function like_this(btn, id, like_count, post_id){
+        LIKE = document.getElementById(id);
+        BTN = document.getElementById(btn);
+        like_count += 1;
+        BTN.classList.remove("btn-default");
+        BTN.classList.add("btn-success");
+        BTN.innerHTML = '<span id="id" class="badge">' + like_count + '</span> Voted';
+        $.post( "/like/" + post_id, {});
+    }
+</script>
+

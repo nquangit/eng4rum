@@ -56,6 +56,14 @@ class Follow(db.Model):
                             primary_key=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Like(db.Model):
+    __tablename__ = 'likes'
+    liker_id = db.Column(db.Integer, db.ForeignKey('users.id'),
+                            primary_key=True)
+    liked_post_id = db.Column(db.Integer, db.ForeignKey('posts.id'),
+                            primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -82,6 +90,11 @@ class User(UserMixin, db.Model):
                                 lazy='dynamic',
                                 cascade='all, delete-orphan')
     comments = db.relationship('Comment', backref='author', lazy='dynamic')
+    liker = db.relationship('Like',
+                               foreign_keys=[Like.liker_id],
+                               backref=db.backref('liker', lazy='joined'),
+                               lazy='dynamic',
+                               cascade='all, delete-orphan')
 
     @staticmethod
     def generate_fake(count=100):
@@ -120,6 +133,8 @@ class User(UserMixin, db.Model):
         if self.role is None:
             if self.email == current_app.config['FLASKY_ADMIN']:
                 self.role = Role.query.filter_by(permissions=0xff).first()
+            if self.confirmed == False:
+                self.confirmed = True
             if self.role is None:
                 self.role = Role.query.filter_by(default=True).first()
             if self.email is not None and self.avatar_hash is None:
@@ -212,6 +227,11 @@ class User(UserMixin, db.Model):
             f = Follow(followed=user)
             self.followed.append(f)
 
+    def like(self, post):
+        if not self.is_liked(post):
+            f = Like(post=post)
+            self.liker.append(f)
+
     def unfollow(self, user):
         f = self.followed.filter_by(followed_id=user.id).first()
         if f:
@@ -220,6 +240,10 @@ class User(UserMixin, db.Model):
     def is_following(self, user):
         return self.followed.filter_by(
             followed_id=user.id).first() is not None
+
+    def is_liked(self, post):
+        return self.liker.filter_by(
+            liked_post_id=post.id).first() is not None
 
     def is_followed_by(self, user):
         return self.followers.filter_by(
@@ -267,6 +291,7 @@ class AnonymousUser(AnonymousUserMixin):
     def is_administrator(self):
         return False
 
+
 login_manager.anonymous_user = AnonymousUser
 
 @login_manager.user_loader
@@ -281,6 +306,11 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     comments = db.relationship('Comment', backref='post', lazy='dynamic')
+    liked_post = db.relationship('Like',
+                                    foreign_keys=[Like.liked_post_id],
+                                    backref='post',
+                                    lazy='dynamic',
+                                    cascade='all, delete-orphan')
 
     @staticmethod
     def generate_fake(count=100):

@@ -1,0 +1,41 @@
+
+<ul class="posts">
+   {% for request in requests %}
+   <li class="post">
+       <div class="post-thumbnail">
+           <a href="{{ url_for('.user', username=request.author.username) }}">
+               <img class="img-rounded profile-thumbnail" src="{{ request.author.gravatar(size=40) }}">
+           </a>
+       </div>
+       <div class="post-content">
+           <div class="post-date">{{ moment(request.timestamp).fromNow() }}</div>
+           <div class="post-author"><a href="{{ url_for('.user', username=request.username) }}">
+               PostID: {{ request.id }}<a href="{{ url_for('main.post', id=request.id) }}"></a> by 
+               <a href="{{ url_for('.user', username=request.author.username) }}">{{ request.author.username }}</a>
+           </a>
+           {% if request.author.is_administrator() %} [Admin] 
+           {% else %}
+               {% if request.role_id==2 %} [Moderate] 
+               {% endif %}
+            {% endif %}
+            <span class="label label-primary">Top {{ requests.index(request) + 1  }}</span>
+           </div>
+            <div class="post-body">
+                {{ request.body.split("\n")[0] | safe }}
+                <span class="label label-success">{{ request.liked_post.count() }} Vote</span>
+            </div>
+            <div class="post-footer">
+              <a href="{{ url_for('.post', id=request.id) }}">
+                <span class="label label-default">Permalink</span>
+              </a>
+              {% if current_user.is_authenticated %}
+                  <a href="#">
+                    <span class="label label-success">{{ request.comments.count() }} Comments</span>
+                  </a>
+              {% endif %}
+            </div>
+            
+       </div>
+   </li>
+   {% endfor %}
+</ul>

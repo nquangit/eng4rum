@@ -5,6 +5,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'NWYzZTEzNjNmOTRkNDA2MTY5NDhkZmQ3ZjQ3OGUyYjRiODk2MmExYmVhZGM4YzhlMDc0ZmU3ZWRkNzA4OTI2MiAgLQo'
     SSL_DISABLE = False
+    FLASKY_ADMIN = 'huynhngocq5@gmail.com'
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_RECORD_QUERIES = True

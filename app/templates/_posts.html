@@ -17,6 +17,9 @@
             <div class="post-body">
                 {{ post.body | safe }}
             </div>
+            <div>
+                <a href="#{{ post.id }}" class="btn btn-default"><span id="like" class="badge">{{ post.liked_post.count() }}</span> Like</a>
+            </div>
             <div class="post-footer">
               {% if current_user == post.author or current_user.is_administrator() %}
               <a href="{{ url_for('.edit', id=post.id) }}">

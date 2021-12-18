@@ -1,6 +1,6 @@
 import uuid
 from flask import render_template, redirect, url_for, abort, flash, request, \
-    current_app, make_response, send_from_directory, send_file
+    current_app, make_response, send_from_directory, send_file, jsonify
 import os
 from os import listdir
 from os.path import isfile, join
@@ -12,7 +12,7 @@ from . import main
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm, \
     CommentForm, UploadForm, MultipleUploadForm, SearchForm
 from .. import db
-from ..models import Permission, Role, User, Post, Comment
+from ..models import Permission, Role, User, Post, Comment, Like
 from ..decorators import admin_required, permission_required
 
 @main.after_app_request
@@ -434,8 +434,12 @@ def download(filename, owner):
     if filename:
         filename = owner + '|' + filename
         uploads = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        return send_file(uploads, as_attachment=True)
-    flash(f'Error: {filename}')
+        if os.path.exists(uploads):
+            return send_file(uploads, as_attachment=True)
+        else:
+            flash(f'Not Found: {filename}')
+            return redirect(url_for('main.download_file'))
+    return redirect(url_for('main.download_file'))
 
 @main.route('/download', methods=['POST', 'GET'])
 def download_file():
@@ -456,4 +460,22 @@ def delete_file(owner, filename):
     else:
         flash('Error!')
     return redirect(url_for('main.download_file'))
+
     
+@main.route('/like/<post_id>', methods = ['POST'])
+def like(post_id):
+    post = Post.query.filter_by(id=post_id).first()
+    if not post is None:
+        current_user.like(post)
+        return jsonify(liked_count=post.liked_post.count())
+    return redirect(url_for('.index'))
+
+@main.route('/rank')
+def rank():
+    page = request.args.get('page', 1, type=int)
+    posts = Post.query.all()
+    posts.sort(reverse=True, key=condition)
+    user = posts[:5]
+    return render_template('rank.html', requests=user, page=page)
+def condition(post):
+    return str(post.liked_post.count()) + str(post.timestamp)
