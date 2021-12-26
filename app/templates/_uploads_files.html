@@ -3,23 +3,29 @@
     
 <ul class="comments">
 
-{% for file in owners %}
+{% for file in files %}
 <li class="comment">
        <div class="comment-thumbnail">
-           <a href="{{ url_for('.user', username=owners[file].username) }}">
-               <img class="img-rounded profile-thumbnail" src="{{ owners[file].gravatar(size=40) }}">
+           <a href="{{ url_for('.user', username=file.author_data.username) }}">
+               <img class="img-rounded profile-thumbnail" src="{{ file.author_data.gravatar(size=40) }}">
            </a>
        </div>
        <div class="comment-content">
-           <div class="comment-author">By: <a href="{{ url_for('.user', username=owners[file].username) }}">{{ owners[file].username }}</a>
+           <div class="comment-author">By: <a href="{{ url_for('.user', username=file.author_data.username) }}">{{ file.author_data.username }}</a>
+           {% if file.post == 1 %}
+                <p class="label label-success">IN POST</p>
+           {% endif %}
+           {% if myfiles %}
+              | <button onclick="myFunction('{{ url_for('main.delete_file', filename=file.name) }}')" class="btn btn-default btn-xs">Copy Source Link</button>
+           {% endif %}
        </div>
-       <a href="{{ url_for('main.download', owner=owners[file].username, filename=file) }}">
+       <a href="{{ url_for('main.download', filename=file.name) }}">
            <div class="comment-body">
-              {{ file }}
+              <div>{{ file.name }}</div>
            </div>
            <div class="post-footer">
-           {% if  current_user.is_administrator() %}
-              <a class="btn btn-danger btn-xs" href="{{ url_for('main.delete_file', filename=file, owner=owners[file].username) }}">Delete</a>
+           {% if current_user.is_administrator() %}
+              <a class="btn btn-danger btn-xs" href="{{ url_for('main.delete_file', filename=file.name) }}">Delete</a>
            {% endif %}
            </div>
         </a>
@@ -29,3 +35,12 @@
 {% endfor %}
 </ul>
 
+<script>
+function myFunction(copyText) {
+
+  navigator.clipboard.writeText(copyText);
+  
+  /* Alert the copied text */
+  alert("Copied the Source Link: " + copyText);
+}
+</script>

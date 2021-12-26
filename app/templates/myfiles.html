@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Eng4rum - My Files{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>My Files</h1>
+</div>
+
+<div class="post-tabs">
+    {{ wtf.quick_form(form) }}
+</div>
+{% set myfiles = True %}
+{% include '_uploads_files.html' %}
+
+{% if pagination %}
+<div class="pagination">
+  {{ macros.pagination_widget(pagination, '.uploads') }}
+</div>
+{% endif %}
+{% endblock %}

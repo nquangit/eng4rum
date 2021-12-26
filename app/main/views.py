@@ -1,3 +1,4 @@
+import io
 import uuid
 from flask import render_template, redirect, url_for, abort, flash, request, \
     current_app, make_response, send_from_directory, send_file, jsonify
@@ -12,7 +13,7 @@ from . import main
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm, \
     CommentForm, UploadForm, MultipleUploadForm, SearchForm
 from .. import db
-from ..models import Permission, Role, User, Post, Comment, Like
+from ..models import Permission, Role, User, Post, Comment, Like, Document
 from ..decorators import admin_required, permission_required
 
 @main.after_app_request
@@ -336,24 +337,28 @@ def about():
 @admin_required
 def uploads():
     form = UploadForm()
-    onlyfiles = [f for f in listdir(current_app.config['UPLOAD_FOLDER']) if isfile(join(current_app.config['UPLOAD_FOLDER'], f))]
-    owners = {}
-    for filename in onlyfiles:
-        own = filename.split('|')[0]
-        #user = User.query.filter_by(username=username).first_or_404()
-        owners[filename.split('|')[1]] = User.query.filter_by(username=own).first()
     if form.validate_on_submit():
         file = request.files['file']
         if file and allowed_file(file.filename):
-            filename = current_user.username + "|" + secure_filename(file.filename)
-            #if os.path.exists(os.path.join(current_app.config['UPLOAD_FOLDER'], filename)):
-            #    filename = str(uuid.uuid4()) + filename
-            path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            file.save(path)
-            flash(f'{filename} Upload success.')
+            filename =  secure_filename(file.filename)
+            data = file.read()
+            document = Document(name=filename,
+                                data = data,
+                                post = False,
+                                author_data = current_user._get_current_object())
+            db.session.add(document)
+            db.session.commit()
+            flash(f'{filename} upload success.')
             return redirect(url_for('main.uploads'))
+            
+    page = request.args.get('page', 1, type=int)
+    pagination = Document.query.order_by(Document.name.desc()).paginate(
+        page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+        error_out=False)
+    files = pagination.items
+    
     page_head = "Uploaded files"
-    return render_template('uploads.html', form=form, owners=owners)
+    return render_template('uploads.html', form=form, files=files, pagination=pagination) #owners=owners,
     
 def allowed_file(filename):
     return '.' in filename and \
@@ -365,45 +370,49 @@ def allowed_file(filename):
 @admin_required
 def multiple_uploads():
     form = MultipleUploadForm()
-    owners = get_list_files(filter_file = "")
-    #print(owners)
     if form.validate_on_submit():
         complete = 0
         error = 0
         if 'file' not in request.files:
             flash('This field is required.')
             return redirect(url_for('main.multiple_uploads'))
-        for file in request.files.getlist('file'): #file = request.files['file']
+        for file in request.files.getlist('file'):
             if file:
-                filename = current_user.username + "|" + secure_filename(file.filename)
-                #if os.path.exists(os.path.join(current_app.config['UPLOAD_FOLDER'], filename)):
-                #    filename = str(uuid.uuid4()) + filename
-                path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                filename =  secure_filename(file.filename)
+                data = file.read()
+                document = Document(name=filename,
+                                    data = data,
+                                    post = False,
+                                    author_data = current_user._get_current_object())
+                db.session.add(document)
+                db.session.commit()
                 flash(f'{filename} upload success.')
                 complete += 1
-                file.save(path)
             else:
-                flash(f'Invalid file type: {file.filename}')
+                flash(f'No file: {file.filename}')
                 error += 1
                 return redirect(url_for('main.multiple_uploads'))
         flash(f'Upload success. [Total]: {complete+error}, [Complete]: {complete}, [Error]: {error}')
         return redirect(url_for('main.multiple_uploads'))
-    return render_template('uploads.html', form=form, owners=owners)
+    
+    page = request.args.get('page', 1, type=int)
+    pagination = Document.query.order_by(Document.name.desc()).paginate(
+                                                 page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+                                                 error_out=False)
+    files = pagination.items
+    
+    return render_template('uploads.html', form=form, files=files, pagination=pagination) #owners=owners
 
 def get_list_files(filter_file):
-    if filter_file == "":
-        onlyfiles = [f for f in listdir(current_app.config['UPLOAD_FOLDER']) if isfile(join(current_app.config['UPLOAD_FOLDER'], f)) and allowed_file(f)]
-    else:
-        onlyfiles = [f for f in listdir(current_app.config['UPLOAD_FOLDER']) if isfile(join(current_app.config['UPLOAD_FOLDER'], f)) and allowed_file(f) and filter_file.lower() in f.lower()]
-    owners = {}
-    for filename in onlyfiles:
-        own = filename.split('|')[0]
-        if not User.query.filter_by(username=own).first():
-            tmp = User.query.filter_by(id=1).first()
-        else:
-            tmp = User.query.filter_by(username=own).first()
-        owners[filename.split('|')[1]] = tmp
-    return owners
+    filter_file = f"%{filter_file}%"
+    files = Document.query.filter(Document.name.like(filter_file)).all()
+    return files
+    #files = Document.query.all()
+    #if filter_file != "":
+    #    for file in files:
+    #        if filter_file not in file.name:
+    #            files.remove(file)
+    #return files
 
 
 @main.route('/ckeditor_uploads', methods = ['POST'])
@@ -411,58 +420,73 @@ def get_list_files(filter_file):
 def ckeditor_uploads():
     file = request.files.get('upload')
     if allowed_file(file.filename):
-        filename = str(uuid.uuid4()) + "." + file.filename.rsplit('.', 1)[1]
-        path = os.path.join(current_app.config['UPLOAD_FOLDER'], current_user.username)
-        if not os.path.exists(path):
-            os.makedirs(path)
-        file.save(os.path.join(path, filename))
-        url = url_for('main.view', filename=filename, username=current_user.username)
+        filename =  secure_filename(file.filename)
+        filename_exist = Document.query.filter_by(name=filename).filter_by(author_id=current_user.id).first()
+        if filename_exist != None:
+            return upload_fail(message='You have uploaded a file with such a name before. Please check it in "My Files"')
+        data = file.read()
+        document = Document(name=filename,
+                            data = data,
+                            post = True,
+                            author_data = current_user._get_current_object())
+        db.session.add(document)
+        db.session.commit()
+        url = url_for('main.view', filename=filename)
         return upload_success(url, filename=filename)
     else:
-        return upload_fail(message='Image only!')
+        return upload_fail(message='File\'s type is not allow to upload!')
 
 
-@main.route('/view/<path:filename>?<username>', methods=['GET', 'POST'])
-def view(username, filename):
-    uploads = os.path.join(current_app.config['UPLOAD_FOLDER'], username)
-    return send_from_directory(directory=uploads, filename=filename)
+@main.route('/view/<path:filename>', methods=['GET', 'POST'])
+def view(filename):
+    returned_file = Document.query.filter_by(name=filename).first_or_404()
+    return send_file(io.BytesIO(returned_file.data), attachment_filename=returned_file.name)
 
-
-@main.route('/download/<owner>?<path:filename>', methods=['GET', 'POST'])
-def download(filename, owner):
-    if filename:
-        filename = owner + '|' + filename
-        uploads = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        if os.path.exists(uploads):
-            return send_file(uploads, as_attachment=True)
-        else:
-            flash(f'Not Found: {filename}')
-            return redirect(url_for('main.download_file'))
-    return redirect(url_for('main.download_file'))
+@main.route('/download/<path:filename>', methods=['GET', 'POST'])
+def download(filename):
+    returned_file = Document.query.filter_by(name=filename).first_or_404()
+    return send_file(io.BytesIO(returned_file.data), attachment_filename=returned_file.name, as_attachment=True)
 
 @main.route('/download', methods=['POST', 'GET'])
 def download_file():
     form = SearchForm()
-    print(current_app.config['UPLOAD_FOLDER'])
-    filter_file = ""
+    page = request.args.get('page', 1, type=int)
+    pagination = Document.query.order_by(Document.name.desc()).paginate(
+                       page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+                       error_out=False)
+    files = pagination.items
     if form.validate_on_submit():
         filter_file  = form.search.data
-    owners = get_list_files(filter_file)
-    return render_template('download.html', form=form, owners=owners)
+        files = get_list_files(filter_file)
+    return render_template('download.html', form=form, files=files, pagination=pagination)
 
-@main.route('/download/delete/<owner>?<path:filename>', methods=['GET', 'POST'])
-def delete_file(owner, filename):
-    if filename:
-        filename = owner + '|' + filename
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        os.remove(file_path)
-        flash(f'Delete {filename} complete')
-    else:
-        flash('Error!')
+@main.route('/myfiles', methods=['POST', 'GET'])
+@login_required
+def myfiles():
+    form = SearchForm()
+    page = request.args.get('page', 1, type=int)
+    pagination = Document.query.filter_by(author_id=current_user.id).paginate(
+                       page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+                       error_out=False)
+    if form.validate_on_submit():                       
+        filter_file  = form.search.data
+        filter_file  = f"%{filter_file}%" 
+        pagination = Document.query.filter_by(author_id=current_user.id).filter(Document.name.like(filter_file)).paginate(
+                       page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+                       error_out=False)
+    files = pagination.items
+    return render_template('myfiles.html', form=form, files=files, pagination=pagination)
+
+@main.route('/download/delete/<path:filename>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def delete_file(filename):
+    returned_file = Document.query.filter_by(name=filename).first_or_404()
+    returned_file.delete()
     return redirect(url_for('main.download_file'))
 
-    
 @main.route('/like/<post_id>', methods = ['POST'])
+@login_required
 def like(post_id):
     post = Post.query.filter_by(id=post_id).first()
     if not post is None:

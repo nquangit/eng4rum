@@ -79,6 +79,7 @@ class User(UserMixin, db.Model):
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
     avatar_hash = db.Column(db.String(32))
     posts = db.relationship('Post', backref='author', lazy='dynamic')
+    documents = db.relationship('Document', backref='author_data', lazy='dynamic')
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
                                backref=db.backref('follower', lazy='joined'),
@@ -297,6 +298,19 @@ login_manager.anonymous_user = AnonymousUser
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+
+class Document(db.Model):
+    __tablename__ = 'documents'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128))
+    data = db.Column(db.LargeBinary)
+    post = db.Column(db.Boolean)
+    author_id= author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    def delete(self):
+        db.session.delete(self)
+
 
 class Post(db.Model):
     __tablename__ = 'posts'

@@ -25,8 +25,9 @@ class Config:
     CKEDITOR_SERVE_LOCAL = True
     UPLOAD_FOLDER = os.path.join(basedir, 'app/uploads')
     CKEDITOR_FILE_UPLOADER = 'main.ckeditor_uploads'
-    ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'doc', 'docx', 'jpg', 'png', 'mp4'])
-
+    CKEDITOR_EXTRA_PLUGINS = ['html5video', 'html5audio']
+    ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'doc', 'docx', 'jpg', 'png', 'mp4', 'mp3', 'wav'])
+     
     @staticmethod
     def init_app(app):
         pass

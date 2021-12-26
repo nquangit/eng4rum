@@ -17,9 +17,16 @@
             <div class="post-body">
                 {{ post.body | safe }}
             </div>
+            {% if current_user.is_authenticated %}
             <div>
-                <a href="#{{ post.id }}" class="btn btn-default"><span id="like" class="badge">{{ post.liked_post.count() }}</span> Like</a>
+                {% if not current_user.is_liked(post) %}
+                <button id="like_button{{ post.id }}" onclick="like_this('like_button{{ post.id }}', 'like{{ post.id }}', {{ post.liked_post.count() }}, {{ post.id }})" class="btn btn-default">
+                <span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Vote</button>
+                {% else %}
+                <button class="btn btn-success"><span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Voted</button>
+                {% endif %}
             </div>
+            {% endif %}
             <div class="post-footer">
               {% if current_user == post.author or current_user.is_administrator() %}
               <a href="{{ url_for('.edit', id=post.id) }}">
@@ -31,17 +38,30 @@
               {% endif %}
               {% if current_user.is_administrator() %}
               <a href="{{ url_for('.edit', id=post.id) }}">
-                <span class="label label-primary">Edit [Admin]</span>
+                <span class="label label-danger">Edit [Admin]</span>
               </a>
               {% endif %}
               <a href="{{ url_for('.post', id=post.id) }}">
                 <span class="label label-default">Permalink</span>
               </a>
               <a href="{{ url_for('.post', id=post.id) }}#comments">
-                <span class="label label-primary">{{ post.comments.count() }} Comments</span>
+                <span class="label label-success">{{ post.comments.count() }} Comments</span>
               </a>
             </div>
         </div>
     </li>
     {% endfor %}
 </ul>
+
+<script>
+    function like_this(btn, id, like_count, post_id){
+        LIKE = document.getElementById(id);
+        BTN = document.getElementById(btn);
+        like_count += 1;
+        BTN.classList.remove("btn-default");
+        BTN.classList.add("btn-success");
+        BTN.innerHTML = '<span id="id" class="badge">' + like_count + '</span> Voted';
+        $.post( "/like/" + post_id, {});
+    }
+</script>
+

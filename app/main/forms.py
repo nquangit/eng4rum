@@ -55,9 +55,9 @@ class UploadForm(FlaskForm):
     file         = FileField('File', validators=[Required()])
     submit       = SubmitField('Upload')
 
-    def validate_file(form, field):
-        if field.data:
-            field.data = re.sub(r'[^a-z0-9_.-]', '_', field.data)
+    #def validate_file(form, field):
+    #    if field.data:
+    #        field.data = re.sub(r'[^a-z0-9_.-]', '_', field.data)
             
 class MultipleUploadForm(FlaskForm):
     file         = MultipleFileField('Files', validators=[DataRequired()])
