@@ -7,7 +7,7 @@ from os import listdir
 from os.path import isfile, join
 from werkzeug import secure_filename
 from flask_login import login_required, current_user
-from flask_ckeditor import upload_fail, upload_success
+from ..lib.flask_ckeditor import upload_fail, upload_success
 from flask_sqlalchemy import get_debug_queries
 from . import main
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm, \

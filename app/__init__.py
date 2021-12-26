@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_ckeditor import CKEditor, upload_success, upload_fail
+from .lib.flask_ckeditor import CKEditor, upload_success, upload_fail
 from flask_bootstrap import Bootstrap
 from flask_mail import Mail
 from flask_moment import Moment

@@ -1,4 +1,4 @@
-from flask_ckeditor import CKEditorField
+from ..lib.flask_ckeditor import CKEditorField
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, BooleanField, SelectField, SubmitField, FileField, MultipleFileField
 from wtforms.validators import Required, Length, Email, Regexp, DataRequired
