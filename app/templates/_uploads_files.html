@@ -24,6 +24,7 @@
               <div>{{ file.name }}</div>
            </div>
            <div class="post-footer">
+              <a class="btn btn-danger btn-xs" href="{{ url_for('main.view', filename=file.name) }}">View</a>
            {% if current_user.is_administrator() %}
               <a class="btn btn-danger btn-xs" href="{{ url_for('main.delete_file', filename=file.name) }}">Delete</a>
            {% endif %}
