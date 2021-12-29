@@ -370,6 +370,9 @@ class Post(db.Model):
         return json_post
 
     def delete(self):
+        comments = Comment.query.filter_by(post_id=self.id)
+        for comment in comments:
+            comment.delete()
         db.session.delete(self)
 
     @staticmethod
@@ -398,6 +401,9 @@ class Comment(db.Model):
         target.body_html = bleach.linkify(bleach.clean(
             markdown(value, output_format='html'),
             tags=allowed_tags, strip=True))
+
+    def delete(self):
+        db.session.delete(self)
 
     def to_json(self):
         json_comment = {

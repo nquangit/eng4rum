@@ -30,7 +30,6 @@ class Config:
     CKEDITOR_PKG_TYPE = 'standard'
     ######### My config #########
     SPEAK_TOPIC_PREFIX = 'hashtag: #'
-    #SERVER_NAME = 'eng4rum.herouapp.com'
     ########### END #############
     @staticmethod
     def init_app(app):

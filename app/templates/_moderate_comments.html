@@ -14,7 +14,7 @@
            <div class="comment-author"><a href="{{ url_for('.user', username=comment.author.username) }}">{{ comment.author.username }}</a>
            {% if comment.author.name %} {{ comment.author.name }} {% endif %}
            {% if comment.author.is_administrator() %} [Admin] {% endif %}
-           to <a href="{{ url_for('.post', id=comment.post_id) }}" >Post_id: {{ comment.post_id }}</a> of 
+           to <a href="{{ url_for('main.post', id=comment.post_id) }}" >Post_id: {{ comment.post_id }}</a> of 
            <a href="{{ url_for('.user', username=comment.author.username) }}" > User: {{ comment.author.username }}</a>
            </div>
            <div class="comment-body">
