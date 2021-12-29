@@ -17,6 +17,7 @@
 	  <li><a href="{{ url_for('main.download_file') }}">Document Download</a></li>
 	  <li><a href="{{ url_for('main.rank') }}">Post Rank</a></li>
 	  {% if current_user.is_authenticated %}
+	  <li><a href="{{ url_for('main.uploads') }}">Share Document</a></li>
 	  <li><a href="{{ url_for('main.myfiles') }}">My Files</a></li>
 	  {% endif %}
 	</ul>

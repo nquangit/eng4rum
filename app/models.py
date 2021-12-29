@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 import hashlib
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -343,12 +344,17 @@ class Post(db.Model):
 
     @staticmethod
     def on_changed_body(target, value, oldvalue, initiator):
-        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
-                        'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
-                        'h1', 'h2', 'h3', 'p']
-        target.body_html = bleach.linkify(bleach.clean(
-            markdown(value, output_format='html5'),
-            tags=allowed_tags, strip=True))
+        #allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
+        #                'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+        #                'h1', 'h2', 'h3', 'p', 'img', 'video', 'audio', 'div']
+        not_alolowed_tags = ['<script>', '</script>', '<html>', '</html>']
+        target.body_html = value
+        for tags in not_alolowed_tags:
+            if tags in target.body_html:
+                target.body_html = target.body_html.replace(tags,"<not_allow_tag>")
+        #target.body_html = bleach.linkify(bleach.clean(
+        #    markdown(value, output_format='html5'),
+        #    tags=allowed_tags, strip=True))
 
     def to_json(self):
         json_post = {

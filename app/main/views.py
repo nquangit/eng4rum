@@ -334,7 +334,6 @@ def about():
     
 @main.route('/uploads', methods = ['POST', 'GET'])
 @login_required
-@admin_required
 def uploads():
     form = UploadForm()
     if form.validate_on_submit():
@@ -483,6 +482,7 @@ def myfiles():
 def delete_file(filename):
     returned_file = Document.query.filter_by(name=filename).first_or_404()
     returned_file.delete()
+    flash('Deleted file')
     return redirect(url_for('main.download_file'))
 
 @main.route('/like/<post_id>', methods = ['POST'])

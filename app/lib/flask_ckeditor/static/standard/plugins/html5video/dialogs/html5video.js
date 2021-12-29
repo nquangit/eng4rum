@@ -183,20 +183,20 @@ CKEDITOR.dialog.add( 'html5video', function( editor ) {
                     widths: ["33%", "33%", "33%"],
                     children: [ {
                         type: 'radio',
-                        id: 'autoplay',
-                        label: editor.lang.html5video.autoplay,
+                        id: 'preload',
+                        label: editor.lang.html5video.preload,
                         items: [
                             [editor.lang.html5video.yes, 'yes'],
                             [editor.lang.html5video.no, 'no']
                         ],
                         'default': 'no',
                         setup: function( widget ) {
-                            if ( widget.data.autoplay ) {
-                                this.setValue( widget.data.autoplay );
+                            if ( widget.data.preload ) {
+                                this.setValue( widget.data.preload );
                             }
                         },
                         commit: function( widget ) {
-                            widget.setData( 'autoplay', this.getValue() );
+                            widget.setData( 'preload', this.getValue() );
                         }
                     }, 
                     {

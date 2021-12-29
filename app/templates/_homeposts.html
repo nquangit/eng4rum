@@ -20,12 +20,12 @@
                     {% for line in range(8) %}
                     	{{ post.body_html.split("\n")[line] | safe }}
                     {% endfor%}
-                    <a href="{{ url_for('.post', id=post.id) }}">Read more...</a>
-                 {% else%}
-                 	{{ post.body| safe }}<br>
+                    <br><a href="{{ url_for('.post', id=post.id) }}">Read more...</a>
+                {% else%}
+                    {{ post.body_html | safe }}<br>
                 {% endif %}
               {% else %}
-                {{ post.body | safe }}
+                    {{ post.body }}
               {% endif %}
             </div>
             {% if current_user.is_authenticated %}
@@ -45,11 +45,6 @@
               </a>
               <a href="{{ url_for('main.delete_post', id=post.id) }}">
                 <span class="label label-danger">Delete</span>
-              </a>
-              {% endif %}
-              {% if current_user.is_administrator() %}
-              <a href="{{ url_for('.edit', id=post.id) }}">
-                <span class="label label-danger">Edit [Admin]</span>
               </a>
               {% endif %}
               <a href="{{ url_for('.post', id=post.id) }}">

@@ -27,6 +27,7 @@ class Config:
     CKEDITOR_FILE_UPLOADER = 'main.ckeditor_uploads'
     CKEDITOR_EXTRA_PLUGINS = ['html5video', 'html5audio']
     ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'doc', 'docx', 'jpg', 'png', 'mp4', 'mp3', 'wav'])
+    CKEDITOR_PKG_TYPE = 'standard'
      
     @staticmethod
     def init_app(app):

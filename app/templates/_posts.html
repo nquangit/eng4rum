@@ -15,7 +15,11 @@
             </div>
             <br>
             <div class="post-body">
-                {{ post.body | safe }}
+              {% if post.body_html %}
+                  {{ post.body_html | safe }} <br>
+              {% else %}
+                  {{ post.body }}
+              {% endif %}
             </div>
             {% if current_user.is_authenticated %}
             <div>
