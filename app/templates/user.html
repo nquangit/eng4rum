@@ -51,7 +51,7 @@
    </div>
 </div>
 <h3>Posts by {{ user.username }}</h3>
-{% include '_posts.html' %}
+{% include '_fullposts.html' %}
 {% if pagination %}
 <div class="pagination">
   {{ macros.pagination_widget(pagination, '.index')}}
