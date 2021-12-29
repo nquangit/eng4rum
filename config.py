@@ -26,7 +26,7 @@ class Config:
     #UPLOAD_FOLDER = os.path.join(basedir, 'app/uploads')
     CKEDITOR_FILE_UPLOADER = 'main.ckeditor_uploads'
     CKEDITOR_EXTRA_PLUGINS = ['html5video', 'html5audio']
-    ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'doc', 'docx', 'jpg', 'png', 'mp4', 'mp3', 'wav'])
+    ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'doc', 'docx', 'jpg', 'png', 'mp4', 'mp3', 'wav', 'pptx'])
     CKEDITOR_PKG_TYPE = 'standard'
     ######### My config #########
     SPEAK_TOPIC_PREFIX = 'hashtag: #'
