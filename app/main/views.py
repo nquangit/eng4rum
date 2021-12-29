@@ -122,7 +122,7 @@ def post(id):
         page, per_page=current_app.config['FLASKY_COMMENTS_PER_PAGE'],
         error_out=False)
     comments = pagination.items
-    return render_template('post.html', posts=[post], form=form,
+    return render_template('post.html', post=post, form=form,
                             comments=comments, pagination=pagination)
 
 @main.route('/post/delete/<int:id>', methods=['GET', 'POST'])
@@ -485,7 +485,7 @@ def delete_file(filename):
     flash('Deleted file')
     return redirect(url_for('main.download_file'))
 
-@main.route('/like/<post_id>', methods = ['POST'])
+@main.route('/like/<post_id>', methods = ['GET', 'POST'])
 @login_required
 def like(post_id):
     post = Post.query.filter_by(id=post_id).first()
@@ -497,9 +497,52 @@ def like(post_id):
 @main.route('/rank')
 def rank():
     page = request.args.get('page', 1, type=int)
-    posts = Post.query.all()
+    posts = Post.query.filter(Post.author.has(role_id=1) | Post.author.has(role_id=2)).all()
     posts.sort(reverse=True, key=condition)
-    user = posts[:5]
+    user = posts[:49]
     return render_template('rank.html', requests=user, page=page)
 def condition(post):
     return str(post.liked_post.count()) + str(post.timestamp)
+
+@main.route('/speak_topic', methods=['GET', 'POST'])
+def speak_topic():
+    page = request.args.get('page', 1, type=int)
+    pagination = Post.query.filter(Post.author.has(role_id=3),
+                        Post.body_html.like(f"%{current_app.config['SPEAK_TOPIC_PREFIX']}%")
+                 ).order_by(Post.timestamp.desc()).paginate(
+        page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+        error_out=False)
+    posts = pagination.items
+    return render_template('speak_topic.html', posts=posts,
+                                      pagination=pagination)
+
+@main.route('/speak_topic/<int:id>', methods=['GET', 'POST'])
+def topic_post(id):
+    post = Post.query.get_or_404(id)
+    if (not post.author.is_administrator()) or (current_app.config['SPEAK_TOPIC_PREFIX'] not in post.body_html):
+        abort(403)
+    page = request.args.get('page', 1, type=int)
+    hashtag = find_hashtag(post.body_html)
+    pagination = Post.query.filter(Post.body_html.like(f"%#{hashtag}%") &
+                               (Post.author.has(role_id=1) | Post.author.has(role_id=2))
+                                   ).paginate(
+        page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+        error_out=False)
+    posts = pagination.items
+    return render_template('topic_post.html', post=post, posts=posts,
+                                      pagination=pagination)
+def find_hashtag(text):
+    lists = text.split(current_app.config['SPEAK_TOPIC_PREFIX'])
+    return lists[1].split(" ")[0]
+
+
+############################ SUBDOMAIN #################################
+@main.route('/', subdomain ='practice')
+def practice():
+    user = User.query.get(1)
+    return render_template('about.html', user=user)
+
+@main.route('/courses/', subdomain ='practice')
+def courses():
+    user = User.query.get(1)
+    return render_template('about.html', user=user)

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Eng4rum - Post{% endblock %}
+
+{% block page_content %}
+{% include '_posts.html' %}
+
+{% if current_user.can(Permission.COMMENT) %}
+<div class="comment-form">
+   
+</div>
+{% endif %}
+
+<h3 id="comments">Post</h3>
+{% include '_homeposts.html' %}
+
+{% if pagination %}
+<div class="pagination">
+  {{ macros.pagination_widget(pagination, '.topic_post', id=post.id) }}
+</div>
+{% endif %}
+{% endblock %}

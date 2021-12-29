@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Eng4rum - Weekly Speak Topic{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Weekly Speak Topic</h1>
+</div>
+
+{% set topic = True %}
+{% include '_topic.html' %}
+
+{% if pagination %}
+<div class="pagination">
+  {{ macros.pagination_widget(pagination, '.speak_topic') }}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,77 @@
+<ul class="posts">
+    {% for post in posts %}
+    <li class="post" id="{{ post.id }}">
+        <div class="post-thumbnail">
+            <a href="{{ url_for('.user', username=post.author.username) }}">
+                <img class="img-rounded profile-thumbnail" src="{{ post.author.gravatar(size=40) }}">
+            </a>
+        </div>
+        <div class="post-content">
+            <div class="post-date">Posted: {{ moment(post.timestamp).fromNow() }}</div>
+            <div class="post-author">
+                <a href="{{ url_for('.user', username=post.author.username) }}">{{ post.author.username }} </a>
+                {% if post.author.name %} {{ post.author.name }} {% endif %}
+                {% if post.author.is_administrator() %} [Admin] {% endif %}
+            </div>
+            <br>
+            <div class="post-body">
+              {% if post.body_html %}
+                {% if post.body_html.split("\n") | length > 8 and not posts.index(post) == 1 %}
+                    {% for line in range(8) %}
+                    	{{ post.body_html.split("\n")[line] | safe }}
+                    {% endfor%}
+                    <br><a href="{{ url_for('.post', id=post.id) }}">Read more...</a>
+                {% else %}
+                    {{ post.body_html | safe }}<br>
+                {% endif %}
+              {% else %}
+                    {{ post.body }}
+              {% endif %}
+            </div>
+            {% if current_user.is_authenticated %}
+            <div>
+                {% if not current_user.is_liked(post) %}
+                <button id="like_button{{ post.id }}" onclick="like_this('like_button{{ post.id }}', 'like{{ post.id }}', {{ post.liked_post.count() }}, {{ post.id }})" class="btn btn-default">
+                <span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Vote</button>
+                {% else %}
+                <button class="btn btn-success"><span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Voted</button>
+                {% endif %}
+            </div>
+            {% endif %}
+            <div class="post-footer">
+              {% if current_user == post.author or current_user.is_administrator() %}
+              <a href="{{ url_for('.edit', id=post.id) }}">
+                <span class="label label-warning">Edit</span>
+              </a>
+              <a href="{{ url_for('main.delete_post', id=post.id) }}">
+                <span class="label label-danger">Delete</span>
+              </a>
+              {% endif %}
+              {% if topic %}
+              <a href="{{ url_for('.topic_post', id=post.id) }}">
+              {% else %}
+              <a href="{{ url_for('.post', id=post.id) }}">
+              {% endif %}
+                <span class="label label-default">Permalink</span>
+              </a>
+              <a href="{{ url_for('.post', id=post.id) }}#comments">
+                <span class="label label-success">{{ post.comments.count() }} Comments</span>
+              </a>
+            </div>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+
+<script>
+    function like_this(btn, id, like_count, post_id){
+        LIKE = document.getElementById(id);
+        BTN = document.getElementById(btn);
+        like_count += 1;
+        BTN.classList.remove("btn-default");
+        BTN.classList.add("btn-success");
+        BTN.innerHTML = '<span id="id" class="badge">' + like_count + '</span> Voted';
+        $.post( "/like/" + post_id, {});
+    }
+</script>
+
