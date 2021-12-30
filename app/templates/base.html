@@ -14,14 +14,21 @@
 <div class="page-header"></div>
 <div>
 	<ul class="breadcrumb">
-	  <li><a href="{{ url_for('main.download_file') }}">Document Download</a></li>
-	  <li><a href="{{ url_for('main.speak_topic') }}">Weekly Speak Topic</a></li>
-	  <li><a href="{{ url_for('main.rank') }}">Post Rank</a></li>
+	  <li><a href="{{ url_for('main.download_file') }}"><span class="glyphicon glyphicon-download"></span> Document Download</a></li>
+	  <li><a href="{{ url_for('main.speak_topic') }}"><span class="glyphicon glyphicon-calendar"></span> Weekly Speak Topic</a></li>
+	  <li><a href="{{ url_for('main.rank') }}"><span class="glyphicon glyphicon-stats"></span> Post Rank</a></li>
 	  {% if current_user.is_authenticated %}
-	  <li><a href="{{ url_for('main.uploads') }}">Share Document</a></li>
-	  <li><a href="{{ url_for('main.myfiles') }}">My Files</a></li>
+	  <li><a href="{{ url_for('main.uploads') }}"><span class="glyphicon glyphicon-share"></span> Share Document</a></li>
+	  <li><a href="{{ url_for('main.myfiles') }}"><span class="glyphicon glyphicon-folder-open"></span> My Files</a></li>
 	  {% endif %}
 	</ul>
+</div>
+{% if previous and previous != '' %}
+<div>
+ <ul class="pager">
+  <li class="previous"><a href="{{ url_for(previous) }}"><span class="glyphicon glyphicon-circle-arrow-left"></span> Back to Home</a></li>
+</ul> 
+{% endif %}
 </div>
 <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 	<br>
@@ -39,25 +46,37 @@
         
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-                <li><a href="{{ url_for('main.index') }}">Home</a></li>
-                <li><a href="{{ url_for('main.about') }}">About</a></li>
+                <li><a href="{{ url_for('main.show_all') }}"><span class="glyphicon glyphicon-home"></span> Home</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <span class="glyphicon glyphicon-book"></span> Manual <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{{ url_for('main.user_manual') }}"><span class="glyphicon glyphicon-book"></span> User Manual</a></li>
+                        {% if current_user.is_administrator %}
+                        <li><a href="{{ url_for('main.admin_manual') }}"><span class="glyphicon glyphicon-book"></span> Administrator Manual</a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+                <li><a href="{{ url_for('main.about') }}"><span class="glyphicon glyphicon-info-sign"></span> About</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {% if current_user.is_administrator() %}
                 
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        Admin <b class="caret"></b>
+                       <span class="glyphicon glyphicon-briefcase"></span> Admin <b class="caret"></b>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="{{ url_for('main.confirm') }}">Manage User</a></li>
-                        <li><a href="{{ url_for('main.multiple_uploads') }}">Upload Files</a></li>
+                        <li><a href="{{ url_for('main.confirm') }}"><span class="glyphicon glyphicon-cog"></span> Manage User</a></li>
+                        <li><a href="{{ url_for('main.multiple_uploads') }}"><span class="glyphicon glyphicon-cloud-upload"></span> Upload Files</a></li>
+                        <li><a href="{{ url_for('main.configuration') }}"><span class="glyphicon glyphicon-wrench"></span>  Configuration</a></li>
                     </ul>
                 </li>
                 
                 {% endif %}
                 {% if current_user.can(Permission.MODERATE_COMMENTS) %}
-                <li><a href="{{ url_for('main.moderate') }}">Moderate Comments</a></li>
+                <li><a href="{{ url_for('main.moderate') }}"><span class="glyphicon glyphicon-screenshot"></span> Moderate Comments</a></li>
                 {% endif %}
                 {% if current_user.is_authenticated %}
                 <li class="dropdown">
@@ -66,9 +85,9 @@
                         Account <b class="caret"></b>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="{{ url_for('main.user', username=current_user.username) }}">Profile</a></li>
-                        <li><a href="{{ url_for('auth.change_password') }}">Change Password</a></li>
-                        <li><a href="{{ url_for('auth.logout') }}">Log Out</a></li>
+                        <li><a href="{{ url_for('main.user', username=current_user.username) }}"><span class="glyphicon glyphicon-user"></span> Profile</a></li>
+                        <li><a href="{{ url_for('auth.change_password') }}"><span class="glyphicon glyphicon-edit"></span> Change Password</a></li>
+                        <li><a href="{{ url_for('auth.logout') }}"><span class="glyphicon glyphicon-log-out"></span> Log Out</a></li>
                     </ul>
                 </li>
                 {% else %}
@@ -98,7 +117,7 @@
 {% block footer %}
 <div class="container">
       <div id="footer">
-           <br><br><br><p>&copy Ngọc Quang THPT Vạn Tường</p><br>
+           <br><br><br><p><span class="glyphicon glyphicon-copyright-mark"></span> Ngọc Quang THPT Vạn Tường</p><br>
       </div>
   </div>
 {% endblock %}  

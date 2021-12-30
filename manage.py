@@ -6,7 +6,7 @@ if os.environ.get('FLASK_COVERAGE'):
     COV = coverage.coverage(branch=True, include='app/*')
     COV.start()
 from app import create_app, db
-from app.models import User, Follow, Role, Permission, Post, Comment, Like
+from app.models import User, Follow, Role, Permission, Post, Comment, Like, Setting
 from flask_script import Manager, Shell
 from flask_migrate import Migrate, MigrateCommand
 
@@ -17,7 +17,7 @@ migrate = Migrate(app, db)
 
 def make_shell_context():
     return dict(app=app, db=db, User=User, Follow=Follow, Role=Role,
-                Permission=Permission, Post=Post, Comment=Comment, Like=Like)
+                Permission=Permission, Post=Post, Comment=Comment, Like=Like, Setting=Setting)
 manager.add_command("shell", Shell(make_context=make_shell_context))
 manager.add_command('db', MigrateCommand)
 
@@ -55,13 +55,16 @@ def profile(length=25, profile_dir=None):
 def deploy():
     """Run deployment tasks."""
     from flask_migrate import upgrade
-    from app.models import Role, User
+    from app.models import Role, User, Setting
 
     # migrate database to latest revision
     upgrade()
 
     # create user roles
     Role.insert_roles()
+    
+    # create setting
+    Setting.insert_settings()
 
     # create self-follows for all users
     User.add_self_follows()

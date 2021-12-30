@@ -5,7 +5,7 @@
 
 {% block page_content %}
 <div class="page-header">
-  <img class="img-rounded profile-thumbnail" src="{{ user.gravatar(size=256) }}">
+  <img class="img-rounded img-thumbnail img-circle profile-thumbnail" src="{{ user.gravatar(size=256) }}">
   <div class="profile-header">
      <h1>{{ user.username }} {% if user.is_administrator() %} 
                                      [Admin] 
@@ -50,11 +50,25 @@
      </p>
    </div>
 </div>
-<h3>Posts by {{ user.username }}</h3>
-{% include '_fullposts.html' %}
+<div class="post-tabs">
+   <ul class="nav nav-tabs">
+       <li{% if show == '' %} class="active"{% endif %}><a href="{{ url_for('.user_show_all', username=user.username) }}" id='all'>All Post</a></li>
+       <li{% if show == 'image' %} class="active"{% endif %}><a href="{{ url_for('.image_gallery', username=user.username) }}">Image Gallery</a></li>
+       <li{% if show == 'files' %} class="active"{% endif %}><a href="{{ url_for('.user_show_files', username=user.username) }}" id='all'>Uploaded Files</a></li>
+   </ul>
+   {% if show == ''  %}
+          {% include '_fullposts.html' %}
+   {% elif show == 'files' %}
+          {% set files = posts %}
+          {% include '_uploads_files.html' %}
+   {% else %}
+          {% include '_image_gallery.html' %}
+   {% endif %}
+</div>
+
 {% if pagination %}
 <div class="pagination">
-  {{ macros.pagination_widget(pagination, '.index')}}
+  {{ macros.pagination_widget(pagination, 'main.user', username=user.username)}}
 </div>
 {% endif %}
 {% endblock %}

@@ -33,10 +33,6 @@
 
 {% block scripts %}
 {{ super() }}
-{% if current_user.is_administrator %}
-   {{ ckeditor.load(pkg_type="full") }}
-{% else %}
    {{ ckeditor.load() }}
-{% endif %}
 {{ ckeditor.config(name='body') }}
 {% endblock %}

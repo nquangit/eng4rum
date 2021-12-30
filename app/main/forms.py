@@ -4,7 +4,7 @@ from wtforms import StringField, TextAreaField, BooleanField, SelectField, Submi
 from wtforms.validators import Required, Length, Email, Regexp, DataRequired
 from wtforms import ValidationError
 from flask_pagedown.fields import PageDownField
-from ..models import Role, User
+from ..models import Role, User, Setting
 
 class NameForm(FlaskForm):
     name=StringField('What is your name?', vaidators=[Required()])
@@ -43,6 +43,21 @@ class EditProfileAdminForm(FlaskForm):
         if User.query.filter_by(username=field.data).first().username != self.user.username:
             raise ValidationError('Username already in use.')
 
+class TypeForm(FlaskForm):
+    Value = TextAreaField()
+    submit = SubmitField('Save')
+        
+class SelectForm(FlaskForm):
+    Select = SelectField(coerce=int)
+    submit = SubmitField('Save')
+
+    def __init__(self, setting, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        settings = Setting.query.filter_by(name=setting.name).first().data.split('|')
+        self.Select.choices = [(settings.index(setting), setting)
+                                   for setting in settings]
+
+
 class PostForm(FlaskForm):
     body = CKEditorField("What's on your mind?", validators=[Required()])
     submit = SubmitField('Submit')
@@ -70,5 +85,4 @@ class MultipleUploadForm(FlaskForm):
 class SearchForm(FlaskForm):
     search       = StringField("Search")
     submit       = SubmitField('Search')
-
 

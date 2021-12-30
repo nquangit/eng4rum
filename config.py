@@ -23,13 +23,15 @@ class Config:
     FLASKY_REQUEST_PER_PAGE = 30
     FLASKY_SLOW_DB_QUERY_TIME=0.5
     CKEDITOR_SERVE_LOCAL = True
-    #UPLOAD_FOLDER = os.path.join(basedir, 'app/uploads')
     CKEDITOR_FILE_UPLOADER = 'main.ckeditor_uploads'
-    CKEDITOR_EXTRA_PLUGINS = ['html5video', 'html5audio']
-    ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'doc', 'docx', 'jpg', 'png', 'mp4', 'mp3', 'wav', 'pptx'])
-    CKEDITOR_PKG_TYPE = 'standard'
+    CKEDITOR_EXTRA_PLUGINS = ['html5video', 'html5audio', 'image']
     ######### My config #########
-    SPEAK_TOPIC_PREFIX = 'hashtag: #'
+    #ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'doc', 'docx', 'jpg', 'png', 'mp4', 'mp3', 'wav', 'pptx'])
+    #CKEDITOR_PKG_TYPE = 'standard'
+    #SPEAK_TOPIC_IDENTIFY = 'hashtag: #'
+    #USER_MANUAL_IDENTIFY = '[User Manual]'
+    #ADMIN_MANUAL_IDENTIFY = '[Admin Manual]'
+    #ABOUT_IDENTIFY = '[About]'
     ########### END #############
     @staticmethod
     def init_app(app):

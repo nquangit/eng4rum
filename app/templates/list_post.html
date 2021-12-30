@@ -2,15 +2,19 @@
 {% import "bootstrap/wtf.html" as wtf %}
 {% import "_macros.html" as macros %}
 
-{% block title %}Eng4rum - Weekly Speak Topic{% endblock %}
+{% block title %}Eng4rum - {{ title }}{% endblock %}
 
 {% block page_content %}
 <div class="page-header">
-    <h1>Weekly Speak Topic</h1>
+    <h1>{{ title }}</h1>
 </div>
 
-{% set topic = True %}
-{% include '_topic.html' %}
+{% if expand_all_post %}
+    {% include '_fullposts.html' %}
+{% else %}
+    {% set topic = True %}
+    {% include '_expand_first_post.html' %}
+{% endif %}
 
 {% if pagination %}
 <div class="pagination">

@@ -122,7 +122,7 @@ class User(UserMixin, db.Model):
     @staticmethod
     def add_self_follows():
         for user in User.query.all():
-            for admin in User.query.get(role_id=3):
+            for admin in User.query.filter_by(role_id=3).all():
                 user.follow(admin)
             if not user.is_following(user):
                 user.follow(user)
@@ -425,3 +425,30 @@ class Comment(db.Model):
         return Comment(body=body)
 
 db.event.listen(Comment.body, 'set', Comment.on_changed_body)
+
+class Setting(db.Model):
+    __tablename__ = 'settings'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64))
+    value = db.Column(db.Text)
+    data = db.Column(db.Text, default="")
+    
+    @staticmethod
+    def insert_settings():
+        settings = {
+            'SPEAK_TOPIC_IDENTIFY': ('hashtag: #', " "),
+            'USER_MANUAL_IDENTIFY': ('[User Manual]', " "),
+            'ADMIN_MANUAL_IDENTIFY': ('[Admin Manual]', " "),
+            'ABOUT_IDENTIFY': ('[About]', " "),
+            'ALLOWED_EXTENSIONS': ('txt|pdf|doc|docx|jpg|png|mp4|mp3|wav|pptx', " "),
+            'CKEDITOR_PKG_TYPE_USER': ('standard', "basic|standard|full"),
+            'CKEDITOR_PKG_TYPE_ADMIN': ('full', "basic|standard|full")
+        }
+        for r in settings:
+            setting = Setting.query.filter_by(name=r).first()
+            if setting is None:
+                setting = Setting(name=r)
+            setting.value = settings[r][0]
+            setting.data = settings[r][1]
+            db.session.add(setting)
+        db.session.commit()

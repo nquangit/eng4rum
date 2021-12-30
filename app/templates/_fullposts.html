@@ -3,7 +3,7 @@
     <li class="post">
         <div class="post-thumbnail">
             <a href="{{ url_for('.user', username=post.author.username) }}">
-                <img class="img-rounded profile-thumbnail" src="{{ post.author.gravatar(size=40) }}">
+                <img class="img-rounded img-circle profile-thumbnail" src="{{ post.author.gravatar(size=40) }}">
             </a>
         </div>
         <div class="post-content">
@@ -25,26 +25,26 @@
             <div>
                 {% if not current_user.is_liked(post) %}
                 <button id="like_button{{ post.id }}" onclick="like_this('like_button{{ post.id }}', 'like{{ post.id }}', {{ post.liked_post.count() }}, {{ post.id }})" class="btn btn-default">
-                <span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Vote</button>
+                <span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Vote <span class="glyphicon glyphicon-heart-empty"></span></button>
                 {% else %}
-                <button class="btn btn-success"><span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Voted</button>
+                <button class="btn btn-success"><span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Voted <span class="glyphicon glyphicon-heart"></span></button>
                 {% endif %}
             </div>
             {% endif %}
             <div class="post-footer">
               {% if current_user == post.author or current_user.is_administrator() %}
-              <a href="{{ url_for('.edit', id=post.id) }}">
-                <span class="label label-primary">Edit</span>
-              </a>
               <a href="{{ url_for('main.delete_post', id=post.id) }}">
-                <span class="label label-primary">Delete</span>
+                <span class="label label-primary"><span class="glyphicon glyphicon-trash"></span> Delete</span>
+              </a>
+              <a href="{{ url_for('.edit', id=post.id) }}">
+                <span class="label label-primary"><span class="glyphicon glyphicon-edit"></span>Edit</span>
               </a>
               {% endif %}
               <a href="{{ url_for('.post', id=post.id) }}">
-                <span class="label label-default">Permalink</span>
+                <span class="label label-default">Permalink <span class="glyphicon glyphicon-link"></span></span>
               </a>
               <a href="{{ url_for('.post', id=post.id) }}#comments">
-                <span class="label label-success">{{ post.comments.count() }} Comments</span>
+                <span class="label label-success">{{ post.comments.count() }} Comments <span class="glyphicon glyphicon-comment"></span>
               </a>
             </div>
         </div>
