@@ -373,9 +373,9 @@ def uploads():
                                          pagination=pagination)
     
 def allowed_file(filename):
-    config = Setting.query.filter_by(name='ALLOWED_EXTENSIONS').first().name.split("|")
+    config = Setting.query.filter_by(name='ALLOWED_EXTENSIONS').first().value.split("|")
     return '.' in filename and \
-           filename.rsplit('.', 1)[1] in config
+           filename.rsplit('.', 1)[-1] in config
 
 def get_list_files(filter_file):
     filter_file = f"%{filter_file}%"
