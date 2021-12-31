@@ -7,10 +7,7 @@
 <div class="page-header">
   <img class="img-rounded profile-thumbnail" src="{{ user.gravatar(size=256) }}">
   <div class="profile-header">
-     <h1>{{ user.username }} {% if user.is_administrator() %} 
-                                     [Admin] 
-                             {% elif user.role_id==2 %} 
-                             [Moderate] {% endif%}
+     <h1>{{ user.username }} [Developer] {% endif%}
      </h1>
      {% if user.name or user.location %}
      <p>
