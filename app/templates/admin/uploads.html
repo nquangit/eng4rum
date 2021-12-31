@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Eng4rum - Upload{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Upload file</h1>
+</div>
+
+<div class="post-tabs">
+    {{ wtf.quick_form(form, enctype='multipart/form-data', extra_classes="form-inline center-block") }}
+</div>
+
+
+<br><h3>Uploaded files</h3>
+    
+<ul class="comments">
+
+{% for file in files %}
+<li class="comment">
+       <div class="comment-thumbnail">
+           <a href="{{ url_for('main.user', username=file.author_data.username) }}">
+               <img class="img-rounded profile-thumbnail" src="{{ file.author_data.gravatar(size=40) }}">
+           </a>
+       </div>
+       <div class="comment-content">
+           <div class="comment-author">By: <a href="{{ url_for('main.user', username=file.author_data.username) }}">{{ file.author_data.username }}</a>
+           {% if file.post == 1 %}
+                <p class="label label-success">IN POST</p>
+           {% endif %}
+              | <button onclick="myFunction('{{ url_for('main.view', filename=file.name) }}')" class="btn btn-default btn-xs">Copy Source Link</button>
+       </div>
+       <a href="{{ url_for('main.download', filename=file.name) }}">
+           <div class="comment-body">
+              <div>{{ file.name }}</div>
+           </div>
+           <div class="post-footer">
+              <a class="btn btn-danger btn-xs" href="{{ url_for('main.view', filename=file.name) }}">View</a>
+           {% if current_user.is_administrator() %}
+              <a class="btn btn-danger btn-xs" href="{{ url_for('main.delete_file', filename=file.name) }}">Delete</a>
+           {% endif %}
+           </div>
+        </a>
+       </div>
+   </li>
+
+{% endfor %}
+</ul>
+
+<script>
+function myFunction(copyText) {
+
+  navigator.clipboard.writeText(copyText);
+  
+  /* Alert the copied text */
+  alert("Copied the Source Link: " + copyText);
+}
+</script>
+
+{% if pagination %}
+<div class="pagination">
+  {{ macros.pagination_widget(pagination, 'main.uploads') }}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% endblock %}

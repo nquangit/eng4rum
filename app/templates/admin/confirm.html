@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Eng4rum - Manage Users{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+   <h1>Manage Users</h1>
+</div>
+
+<ul class="comments">
+   {% for request in requests %}
+   <li class="comment">
+       <div class="comment-thumbnail">
+           <a href="{{ url_for('main.user', username=request.username) }}">
+               <img class="img-rounded profile-thumbnail" src="{{ request.gravatar(size=40) }}">
+           </a>
+       </div>
+       <div class="comment-content">
+           <div class="comment-date">{{ moment(request.member_since).fromNow() }}</div>
+           <div class="comment-author"><a href="{{ url_for('main.user', username=request.username) }}">{{ request.username }}</a>
+           {% if request.is_administrator() %} [Admin] 
+           {% else %}
+               {% set moderate_button = "Give Moderate" %}
+               {% set class = "default"%}
+               {% if request.role_id==2 %} [Moderate] 
+               {% set moderate_button = "Del Moderate" %}
+               {% set class = "danger"%}
+               {% endif %}
+
+           </div>
+               {% if current_user.is_administrator() %}
+                 <br>
+                 {% if request.confirmed == 0 %}
+                 <a class="btn btn-default btn-xs" href="{{ url_for('admin.confirm_enable', id=request.id) }}">Enable</a>
+                 {% else %}
+                 <a class="btn btn-danger btn-xs" href="{{ url_for('admin.confirm_disable', id=request.id) }}">Disable</a>
+                 {% endif %}
+                 <a class="btn btn-{{ class }} btn-xs" href="{{ url_for('admin.set_moderate', id=request.id) }}">{{ moderate_button }}</a>
+                 <a class="btn btn-danger btn-xs" href="{{ url_for('admin.delete', id=request.id) }}">Delete</a>
+               {% endif %}
+           {% endif %}
+       </div>
+   </li>
+   {% endfor %}
+</ul>
+
+{% if pagination %}
+<div class="pagination">
+   {{ macros.pagination_widget(pagination, 'admin.confirm') }}
+</div>
+{% endif %}
+{% endblock %}

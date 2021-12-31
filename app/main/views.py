@@ -1,5 +1,4 @@
 import io
-import uuid
 from flask import render_template, redirect, url_for, abort, flash, request, \
     current_app, make_response, send_from_directory, send_file, jsonify
 import os
@@ -11,8 +10,7 @@ from ..lib.flask_ckeditor import upload_fail, upload_success
 from flask_sqlalchemy import get_debug_queries
 from . import main
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm, \
-    CommentForm, UploadForm, MultipleUploadForm, SearchForm,\
-    SelectForm, TypeForm
+    CommentForm, UploadForm, SearchForm
 from .. import db
 from ..models import Permission, Role, User, Post, Comment, Like, Document, Setting
 from ..decorators import admin_required, permission_required
@@ -41,7 +39,7 @@ def index():
             form.validate_on_submit():
         post = Post(body=form.body.data, author=current_user._get_current_object())
         db.session.add(post)
-        return redirect(url_for('.index'))
+        return redirect(url_for('main.index'))
     page = request.args.get('page', 1, type=int)
     show_followed = False
     if current_user.is_authenticated:
@@ -59,7 +57,7 @@ def index():
 
 @main.route('/user/<username>')
 def user(username):
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     user = User.query.filter_by(username=username).first_or_404()
     page = request.args.get('page', 1, type=int)
     show = request.cookies.get('show', '')
@@ -85,28 +83,28 @@ def user(username):
 @main.route('/user/<username>/all')
 @login_required
 def user_show_all(username):
-    resp = make_response(redirect(url_for('.user', username=username)))
+    resp = make_response(redirect(url_for('.user', username=username) + "#all"))
     resp.set_cookie('show', '', max_age=30*24*60*60)
     return resp
 
 @main.route('/user/<username>/files')
 @login_required
 def user_show_files(username):
-    resp = make_response(redirect(url_for('.user', username=username)))
+    resp = make_response(redirect(url_for('.user', username=username) + '#files'))
     resp.set_cookie('show', 'files', max_age=30*24*60*60)
     return resp
 
 @main.route('/user/<username>/image_gallery')
 @login_required
 def image_gallery(username):
-    resp = make_response(redirect(url_for('.user', username=username)))
+    resp = make_response(redirect(url_for('.user', username=username) + '#image_gallery'))
     resp.set_cookie('show', 'image', max_age=30*24*60*60)
     return resp
 
 @main.route('/edit-profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     form = EditProfileForm()
     if form.validate_on_submit():
         current_user.name = form.name.data
@@ -124,7 +122,7 @@ def edit_profile():
 @login_required
 @admin_required
 def edit_profile_admin(id):
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     user = User.query.get_or_404(id)
     if not current_user.is_administrator():
         abort(403)
@@ -151,7 +149,7 @@ def edit_profile_admin(id):
 
 @main.route('/post/<int:id>', methods=['GET', 'POST'])
 def post(id):
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     post = Post.query.get_or_404(id)
     form = CommentForm()
     if form.validate_on_submit():
@@ -177,13 +175,13 @@ def delete_post(id):
     post = Post.query.get_or_404(id)
     post.delete()
     flash("Delete post complete")
-    return redirect(url_for('.index'))
+    return redirect(url_for('main.index'))
 
 
 @main.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit(id):
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     post = Post.query.get_or_404(id)
     if current_user != post.author and \
             not current_user.can(Permission.ADMINISTER):
@@ -208,7 +206,7 @@ def follow(username):
     user = User.query.filter_by(username=username).first()
     if user is None:
         flash('Invalid user.')
-        return redirect(url_for('.index'))
+        return redirect(url_for('main.index'))
     if current_user.is_following(user):
         flash('You are already following this user.')
         return redirect(url_for('.user', username=username))
@@ -224,7 +222,7 @@ def unfollow(username):
     user = User.query.filter_by(username=username).first()
     if user is None:
         flash('Invalid user.')
-        return redirect(url_for('.index'))
+        return redirect(url_for('main.index'))
     if not current_user.is_following(user):
         flash('You are not following this user.')
         return redirect(url_for('.user', username=username))
@@ -235,12 +233,12 @@ def unfollow(username):
 
 @main.route('/followers/<username>')
 def followers(username):
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     title="Followers of"
     user = User.query.filter_by(username=username).first()
     if user is None:
         flash('Invalid user.')
-        return redirect(url_for('.index'))
+        return redirect(url_for('main.index'))
     page = request.args.get('page', 1, type=int)
     pagination = user.followers.paginate(
         page, per_page=current_app.config['FLASKY_FOLLOWERS_PER_PAGE'],
@@ -254,12 +252,12 @@ def followers(username):
 
 @main.route('/followed-by/<username>')
 def followed_by(username):
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     title="Followed by"
     user = User.query.filter_by(username=username).first()
     if user is None:
         flash('Invalid user.')
-        return redirect(url_for('.index'))
+        return redirect(url_for('main.index'))
     page = request.args.get('page', 1, type=int)
     pagination = user.followed.paginate(
         page, per_page=current_app.config['FLASKY_FOLLOWERS_PER_PAGE'],
@@ -273,7 +271,7 @@ def followed_by(username):
 @main.route('/all')
 @login_required
 def show_all():
-    resp = make_response(redirect(url_for('.index')))
+    resp = make_response(redirect(url_for('main.index')))
     resp.set_cookie('show_followed', '', max_age=30*24*60*60)
     return resp
 
@@ -281,7 +279,7 @@ def show_all():
 @main.route('/followed')
 @login_required
 def show_followed():
-    resp = make_response(redirect(url_for('.index')))
+    resp = make_response(redirect(url_for('main.index')))
     resp.set_cookie('show_followed', '1', max_age=30*24*60*60)
     return resp
 
@@ -289,7 +287,7 @@ def show_followed():
 @login_required
 @permission_required(Permission.MODERATE_COMMENTS)
 def moderate():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     page = request.args.get('page', 1, type=int)
     pagination = Comment.query.order_by(Comment.timestamp.desc()).paginate(
         page, per_page=current_app.config['FLASKY_COMMENTS_PER_PAGE'],
@@ -320,106 +318,18 @@ def moderate_disable(id):
     return redirect(url_for('.moderate',
                             page=request.args.get('page', 1, type=int)))
 
-@main.route('/admin/config')
-@login_required
-@admin_required
-def configuration():
-    previous = request.args.get('previous','.index')
-    title = "Configuration"
-    configurations = Setting.query.order_by(Setting.name.asc()).all()
-    return render_template('configuration.html', title=title,  previous=previous,
-                                         configurations=configurations)
-
-@main.route('/admin/config/<int:id>', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def edit_config(id):
-    previous = request.args.get('previous','.index')
-    setting = Setting.query.get_or_404(id)
-    if setting.data != " ":
-        form = SelectForm(setting=setting)
-        lists = setting.data.split('|')
-    else:
-        form = TypeForm(setting=setting)
-    if form.validate_on_submit():
-        if setting.data != " ":
-            tmp = form.Select.data
-            setting.value = lists[form.Select.data]
-        else:
-            setting.value = form.Value.data
-        db.session.add(setting)
-        flash("Edit Complete")
-        return redirect(url_for('.configuration'))
-    if setting.data != " ":
-        form.Select.data = lists.index(setting.value)
-    else:
-        form.Value.data = setting.value
-    title = f"Edit Configuration: {setting.name}"
-    return render_template('only_form.html', title=title,  previous=previous,
-                                        form=form)
-
-@main.route('/confirm')
-@login_required
-@admin_required
-def confirm():
-    previous = request.args.get('previous','.index')
-    page = request.args.get('page', 1, type=int)
-    #tmp = User.query.order_by(User.confirmed.asc())
-    pagination = User.query.order_by(User.confirmed.asc()).order_by(User.member_since.desc()).paginate(
-                     page, per_page=current_app.config['FLASKY_REQUEST_PER_PAGE'],
-                     error_out=False)
-    requests = pagination.items
-    return render_template('confirm.html', requests=requests, previous=previous,
-                            pagination=pagination, page=page)
-
-@main.route('/confirm/enable/<int:id>')
-@login_required
-@admin_required
-#@login.user_loader
-def confirm_enable(id):
-    conf = User.query.get_or_404(id)
-    conf.confirm_acc()
-    return redirect(url_for('.confirm', page=request.args.get('page', 1, type=int)))
-
-
-@main.route('/confirm/disable/<int:id>')
-@login_required
-@admin_required
-def confirm_disable(id):
-    conf = User.query.get_or_404(id)
-    conf.confirm_acc()
-    return redirect(url_for('.confirm', page=request.args.get('page', 1, type=int)))
-
-
-@main.route('/confirm/delete/<int:id>')
-@login_required
-@admin_required
-def delete(id):
-    conf = User.query.get_or_404(id)
-    conf.delete()
-    return redirect(url_for('.confirm', page=request.args.get('page', 1, type=int)))
-    
-@main.route('/confirm/set_moderate/<int:id>')
-@login_required
-@admin_required
-def set_moderate(id):
-    conf = User.query.get_or_404(id)
-    conf.set_moderate()
-    return redirect(url_for('.confirm', page=request.args.get('page', 1, type=int)))
-    
-
 @main.route('/ckeditor')
 @login_required
 @admin_required
 def ckeditor():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     form = RichTextForm()
     title = "CKEDITOR"
     return render_template('only_form.html',form = form, title=title, previous=previous)
     
 @main.route('/about')
 def about():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     title = "About"
     user = User.query.get(1)
     page = request.args.get('page', 1, type=int)
@@ -436,7 +346,7 @@ def about():
 @main.route('/uploads', methods = ['POST', 'GET'])
 @login_required
 def uploads():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     form = UploadForm()
     if form.validate_on_submit():
         file = request.files['file']
@@ -466,46 +376,6 @@ def allowed_file(filename):
     config = Setting.query.filter_by(name='ALLOWED_EXTENSIONS').first().name.split("|")
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in config
-
-@main.route('/multiple_uploads', methods = ['POST', 'GET'])
-@login_required
-@admin_required
-def multiple_uploads():
-    previous = request.args.get('previous','.index')
-    form = MultipleUploadForm()
-    if form.validate_on_submit():
-        complete = 0
-        error = 0
-        if 'file' not in request.files:
-            flash('This field is required.')
-            return redirect(url_for('main.multiple_uploads'))
-        for file in request.files.getlist('file'):
-            if file:
-                filename =  secure_filename(file.filename)
-                data = file.read()
-                document = Document(name=filename,
-                                    data = data,
-                                    post = False,
-                                    author_data = current_user._get_current_object())
-                db.session.add(document)
-                db.session.commit()
-                flash(f'{filename} upload success.')
-                complete += 1
-            else:
-                flash(f'No file: {file.filename}')
-                error += 1
-                return redirect(url_for('main.multiple_uploads'))
-        flash(f'Upload success. [Total]: {complete+error}, [Complete]: {complete}, [Error]: {error}')
-        return redirect(url_for('main.multiple_uploads'))
-    
-    page = request.args.get('page', 1, type=int)
-    pagination = Document.query.order_by(Document.name.desc()).paginate(
-                                                 page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
-                                                 error_out=False)
-    files = pagination.items
-    
-    return render_template('uploads.html', form=form, files=files, previous=previous,
-                                               pagination=pagination) 
 
 def get_list_files(filter_file):
     filter_file = f"%{filter_file}%"
@@ -546,7 +416,7 @@ def download(filename):
 
 @main.route('/download', methods=['POST', 'GET'])
 def download_file():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     form = SearchForm()
     page = request.args.get('page', 1, type=int)
     pagination = Document.query.order_by(Document.name.desc()).paginate(
@@ -562,7 +432,7 @@ def download_file():
 @main.route('/myfiles', methods=['POST', 'GET'])
 @login_required
 def myfiles():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     form = SearchForm()
     page = request.args.get('page', 1, type=int)
     pagination = Document.query.filter_by(author_id=current_user.id).paginate(
@@ -594,11 +464,11 @@ def like(post_id):
     if not post is None:
         current_user.like(post)
         return jsonify(liked_count=post.liked_post.count())
-    return redirect(url_for('.index'))
+    return redirect(url_for('main.index'))
 
 @main.route('/rank')
 def rank():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     page = request.args.get('page', 1, type=int)
     posts = Post.query.filter(Post.author.has(role_id=1) | Post.author.has(role_id=2)).all()
     posts.sort(reverse=True, key=condition)
@@ -609,7 +479,7 @@ def condition(post):
 
 @main.route('/speak_topic', methods=['GET', 'POST'])
 def speak_topic():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     title = "Weekly Speak Topic"
     page = request.args.get('page', 1, type=int)
     config = Setting.query.filter_by(name="SPEAK_TOPIC_IDENTIFY").first()
@@ -624,7 +494,7 @@ def speak_topic():
 
 @main.route('/speak_topic/<int:id>', methods=['GET', 'POST'])
 def topic_post(id):
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     post = Post.query.get_or_404(id)
     config = Setting.query.filter_by(name="SPEAK_TOPIC_IDENTIFY").first()
     if (not post.author.is_administrator()) or (config.value not in post.body_html):
@@ -646,7 +516,7 @@ def find_hashtag(text):
 
 @main.route('/user_manual', methods=['GET', 'POST'])
 def user_manual():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     title = "User Manual"
     page = request.args.get('page', 1, type=int)
     config = Setting.query.filter_by(name="USER_MANUAL_IDENTIFY").first()
@@ -662,7 +532,7 @@ def user_manual():
 
 @main.route('/admin_manual', methods=['GET', 'POST'])
 def admin_manual():
-    previous = request.args.get('previous','.index')
+    previous = request.args.get('previous','main.index')
     title = "Administrator Manual"
     page = request.args.get('page', 1, type=int)
     config = Setting.query.filter_by(name="ADMIN_MANUAL_IDENTIFY").first()

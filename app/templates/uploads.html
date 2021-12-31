@@ -13,11 +13,11 @@
     {{ wtf.quick_form(form, enctype='multipart/form-data', extra_classes="form-inline center-block") }}
 </div>
 
-{% include '_uploads_files.html' %}
+{% include 'admin/_uploads_files.html' %}
 
 {% if pagination %}
 <div class="pagination">
-  {{ macros.pagination_widget(pagination, '.uploads') }}
+  {{ macros.pagination_widget(pagination, 'main.uploads') }}
 </div>
 {% endif %}
 {% endblock %}
