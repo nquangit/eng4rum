@@ -10,7 +10,7 @@ from ..lib.flask_ckeditor import upload_fail, upload_success
 from flask_sqlalchemy import get_debug_queries
 from . import main
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm, \
-    CommentForm, UploadForm, SearchForm
+    CommentForm, UploadForm, SearchForm, TypeForm
 from .. import db
 from ..models import Permission, Role, User, Post, Comment, Like, Document, Setting
 from ..decorators import admin_required, permission_required
@@ -361,9 +361,11 @@ def uploads():
             db.session.commit()
             flash(f'{filename} upload success.')
             return redirect(url_for('main.uploads'))
-            
+        else:
+            flash(f'{filename} not allow to upload.')
+            return redirect(url_for('main.uploads'))
     page = request.args.get('page', 1, type=int)
-    pagination = Document.query.order_by(Document.name.desc()).paginate(
+    pagination = Document.query.filter_by(author_id=current_user.id).order_by(Document.name.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
         error_out=False)
     files = pagination.items
@@ -379,7 +381,9 @@ def allowed_file(filename):
 
 def get_list_files(filter_file):
     filter_file = f"%{filter_file}%"
-    files = Document.query.filter(Document.name.like(filter_file)).all()
+    config = Setting.query.filter_by(name='NOT_SHOW_FILE').first().value
+    config = f"%{config}%"
+    files = Document.query.filter(Document.name.like(filter_file) & Document.name.notlike(config)).all()
     return files
 
 @main.route('/ckeditor_uploads', methods = ['POST'])
@@ -419,7 +423,10 @@ def download_file():
     previous = request.args.get('previous','main.index')
     form = SearchForm()
     page = request.args.get('page', 1, type=int)
-    pagination = Document.query.order_by(Document.name.desc()).paginate(
+    not_show = Setting.query.filter_by(name='NOT_SHOW_FILE').first().value
+    not_show = f"%{not_show}%"
+    pagination = Document.query.filter((Document.name.notlike(not_show)) &
+                                          Document.author_data.has(role_id=3)).order_by(Document.name.desc()).paginate(
                        page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
                        error_out=False)
     files = pagination.items
@@ -448,11 +455,35 @@ def myfiles():
     return render_template('myfiles.html', form=form, files=files, previous=previous,
                                      pagination=pagination)
 
+@main.route('/myfiles/edit/<filename>', methods=['POST', 'GET'])
+@login_required
+def rename_file(filename):
+    previous = request.args.get('previous','main.index')
+    form = TypeForm()
+    file = Document.query.filter_by(name=filename).first_or_404()
+    if file.author_id != current_user.id and not current_user.is_administrator():
+        abort(403)
+    extension = file.name.split('.')[-1]
+    filename = ''.join(file.name.split('.')[0:-1])
+    if form.validate_on_submit():
+        posts = Post.query.filter(Post.body_html.like(f"%{filename}.{extension}%")).filter_by(author_id=file.author_id)
+        new_filename = secure_filename(form.value.data)
+        file.name = f"{new_filename}.{extension}"
+        for post in posts:
+            post.body_html = post.body_html.replace(f"{filename}.{extension}", "{new_filename}.{extension}")
+            db.session.add(post)
+        db.session.add(file)
+        flash(f'Complete change filename to {new_filename}.{extension}')
+        return redirect(url_for('main.myfiles'))
+    form.value.data = ''.join(file.name.split('.')[0:-1])
+    return render_template('myfiles.html', form=form, previous=previous)
+
 @main.route('/download/delete/<path:filename>', methods=['GET', 'POST'])
 @login_required
-@admin_required
 def delete_file(filename):
     returned_file = Document.query.filter_by(name=filename).first_or_404()
+    if returned_file.id != current_user.id:
+        abort(403)
     returned_file.delete()
     flash('Deleted file')
     return redirect(url_for('main.download_file'))

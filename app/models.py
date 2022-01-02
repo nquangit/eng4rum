@@ -431,7 +431,7 @@ class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64))
     value = db.Column(db.Text)
-    data = db.Column(db.Text, default="")
+    data = db.Column(db.Text, default=" ")
     
     @staticmethod
     def insert_settings():
@@ -442,7 +442,9 @@ class Setting(db.Model):
             'ABOUT_IDENTIFY': ('[About]', " "),
             'ALLOWED_EXTENSIONS': ('txt|pdf|doc|docx|jpg|png|mp4|mp3|wav|pptx', " "),
             'CKEDITOR_PKG_TYPE_USER': ('standard', "basic|standard|full"),
-            'CKEDITOR_PKG_TYPE_ADMIN': ('full', "basic|standard|full")
+            'CKEDITOR_PKG_TYPE_ADMIN': ('full', "basic|standard|full"),
+            'NOT_SHOW_FILE': ('NOT_SHOW', " "),
+            'AUTO_CONFIRM': ('no', "yes|no"),
         }
         for r in settings:
             setting = Setting.query.filter_by(name=r).first()

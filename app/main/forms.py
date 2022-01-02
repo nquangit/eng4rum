@@ -7,7 +7,7 @@ from flask_pagedown.fields import PageDownField
 from ..models import Role, User, Setting
 
 class NameForm(FlaskForm):
-    name=StringField('What is your name?', vaidators=[Required()])
+    name = StringField('What is your name?', vaidators=[Required()])
     submit = SubmitField('Submit')
 
 class EditProfileForm(FlaskForm):
@@ -63,3 +63,6 @@ class SearchForm(FlaskForm):
     search       = StringField("Search")
     submit       = SubmitField('Search')
 
+class TypeForm(FlaskForm):
+    value = TextAreaField(validators=[Required()])
+    submit = SubmitField('Save')

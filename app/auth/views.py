@@ -2,7 +2,7 @@ from flask import render_template, redirect, request, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from . import auth
 from .. import db
-from ..models import User
+from ..models import User, Setting
 from ..email import send_email
 from .forms import LoginForm, RegistrationForm, ChangePasswordForm, \
     PasswordResetRequestForm, PasswordResetForm
@@ -50,9 +50,16 @@ def register():
         return redirect(url_for('main.index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(email=form.email.data,
-                    username=form.username.data,
-                    password=form.password.data)
+        config = Setting.query.filter_by(name='AUTO_CONFIRM').first().value
+        if config == 'yes':
+            user = User(email=form.email.data,
+                        username=form.username.data,
+                        password=form.password.data,
+                        confirmed=True)
+        else:
+            user = User(email=form.email.data,
+                        username=form.username.data,
+                        password=form.password.data)
         db.session.add(user)
         db.session.commit()
         token = user.generate_confirmation_token()
