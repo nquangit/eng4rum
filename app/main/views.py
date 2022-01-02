@@ -470,7 +470,7 @@ def rename_file(filename):
         new_filename = secure_filename(form.value.data)
         file.name = f"{new_filename}.{extension}"
         for post in posts:
-            post.body_html = post.body_html.replace(f"{filename}.{extension}", "{new_filename}.{extension}")
+            post.body_html = post.body_html.replace(f"{filename}.{extension}", f"{new_filename}.{extension}")
             db.session.add(post)
         db.session.add(file)
         flash(f'Complete change filename to {new_filename}.{extension}')
