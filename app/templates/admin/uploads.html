@@ -49,19 +49,27 @@
 </ul>
 
 <script>
-function myFunction(copyText) {
-  
-  if (navigator.clipboard != undefined) {//Chrome
-        navigator.clipboard.writeText(copyText).then(function () {
-            console.log('Async: Copying to clipboard was successful!');
-        }, function (err) {
-            console.error('Async: Could not copy text: ', err);
+async function myFunction(copyText) {
+  if (navigator.clipboard && window.isSecureContext) {
+        // navigator clipboard api method'
+        return navigator.clipboard.writeText(copyText);
+    } else {
+        // text area method
+        let textArea = document.createElement("textarea");
+        textArea.value = copyText;
+        // make the textarea out of viewport
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        return new Promise((res, rej) => {
+            // here the magic happens
+            document.execCommand('copy') ? res() : rej();
+            textArea.remove();
         });
     }
-    else if(window.clipboardData) { // Internet Explorer
-        window.clipboardData.setData("Text", copyText);
-    }
-
   alert("Copied the Source Link: " + copyText);
 }
 </script>
