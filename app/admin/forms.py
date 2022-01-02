@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import TextAreaField, SelectField, SubmitField,MultipleFileField
-from wtforms.validators import Required, DataRequired
+from wtforms import TextAreaField, SelectField, SubmitField, MultipleFileField, StringField
+from wtforms.validators import Required, DataRequired, Length
 from ..models import Setting
 
 class TypeForm(FlaskForm):
@@ -24,3 +24,9 @@ class MultipleUploadForm(FlaskForm):
     def validate_image(form, field):
         if field.data:
             field.data = re.sub(r'[^a-z0-9_.-]', '_', field.data)
+            
+class AddConfigurationForm(FlaskForm):
+    name = StringField('Name of configuration: ', validators=[Required(), Length(1, 128)])
+    value = TextAreaField('Value for configuration: ',validators=[Required()])
+    data = TextAreaField("List value (with | separator).[Note] If it isn't have list value, fill this text area with a backspace. \nExample: full|standard|basic")
+    submit = SubmitField('Add')

@@ -454,3 +454,6 @@ class Setting(db.Model):
             setting.data = settings[r][1]
             db.session.add(setting)
         db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)

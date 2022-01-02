@@ -4,7 +4,7 @@ from werkzeug import secure_filename
 from flask_login import login_required, current_user
 from ..lib.flask_ckeditor import upload_fail, upload_success
 from . import admin
-from .forms import MultipleUploadForm, SelectForm, TypeForm
+from .forms import MultipleUploadForm, SelectForm, TypeForm, AddConfigurationForm
 from .. import db
 from ..models import Permission, Role, User, Post, Comment, Like, Document, Setting
 from ..decorators import admin_required, permission_required
@@ -18,6 +18,27 @@ def configuration():
     configurations = Setting.query.order_by(Setting.name.asc()).all()
     return render_template('admin/configuration.html', title=title,  previous=previous,
                                          configurations=configurations)
+
+@admin.route('/config/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_config():
+    previous = request.args.get('previous','main.index')
+    title = "Add Configuration"
+    form = AddConfigurationForm()
+    if form.validate_on_submit():
+        if '|' not in form.data.data:
+            data = " "
+        else:
+            data = form.data.data
+        config = Setting(name = form.name.data.replace(' ','_').upper(),
+                         value = form.value.data,
+                         data = data)
+        db.session.add(config)
+        flash('Add configuration complete')
+        return redirect(url_for('admin.configuration'))
+        
+    return render_template('admin/only_form.html', title=title, form=form, previous=previous)
 
 @admin.route('/config/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -38,7 +59,7 @@ def edit_config(id):
             setting.value = form.Value.data
         db.session.add(setting)
         flash("Edit Complete")
-        return redirect(url_for('.configuration'))
+        return redirect(url_for('admin.configuration'))
     if setting.data != " ":
         form.Select.data = lists.index(setting.value)
     else:
@@ -46,6 +67,14 @@ def edit_config(id):
     title = f"Edit Configuration: {setting.name}"
     return render_template('admin/only_form.html', title=title,  previous=previous,
                                         form=form)
+
+@admin.route('/config/<int:id>/delete', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def del_config(id):
+    config = Setting.query.get_or_404(id)
+    config.delete()
+    return redirect(url_for('admin.configuration'))
 
 @admin.route('/confirm')
 @login_required
