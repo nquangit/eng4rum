@@ -42,16 +42,7 @@
 <script>
 function myFunction(copyText) {
 
-  if (navigator.clipboard != undefined) {//Chrome
-        navigator.clipboard.writeText(copyText).then(function () {
-            console.log('Async: Copying to clipboard was successful!');
-        }, function (err) {
-            console.error('Async: Could not copy text: ', err);
-        });
-    }
-    else if(window.clipboardData) { // Internet Explorer
-        window.clipboardData.setData("Text", copyText);
-    }
+  var promise = navigator.clipboard.writeText(copyText)
 
   alert("Copied the Source Link: " + copyText);
 }
