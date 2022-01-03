@@ -20,16 +20,17 @@
            <div class="comment-date">{{ moment(request.member_since).fromNow() }}</div>
            <div class="comment-author"><a href="{{ url_for('main.user', username=request.username) }}">{{ request.username }}</a>
            {% if request.is_administrator() %} [Admin] 
+           {% elif request.can(Permission.TEACHER) %} [Teacher]
            {% else %}
                {% set moderate_button = "Give Moderate" %}
                {% set class = "default"%}
-               {% if request.role_id==2 %} [Moderate] 
-               {% set moderate_button = "Del Moderate" %}
-               {% set class = "danger"%}
+               {% if request.can(Permission.MODERATE_COMMENTS) %} [Moderate Comments] 
+                   {% set moderate_button = "Del Moderate" %}
+                   {% set class = "danger"%}
                {% endif %}
 
            </div>
-               {% if current_user.is_administrator() %}
+
                  <br>
                  {% if request.confirmed == 0 %}
                  <a class="btn btn-default btn-xs" href="{{ url_for('admin.confirm_enable', id=request.id) }}">Enable</a>
@@ -38,7 +39,6 @@
                  {% endif %}
                  <a class="btn btn-{{ class }} btn-xs" href="{{ url_for('admin.set_moderate', id=request.id) }}">{{ moderate_button }}</a>
                  <a class="btn btn-danger btn-xs" href="{{ url_for('admin.delete', id=request.id) }}">Delete</a>
-               {% endif %}
            {% endif %}
        </div>
    </li>

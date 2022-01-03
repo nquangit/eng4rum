@@ -14,7 +14,11 @@ class Permission:
     COMMENT = 0x02
     WRITE_ARTICLES = 0x04
     MODERATE_COMMENTS = 0x08
-    ADMINISTER = 0x80
+    WRITE_WEEKLY_SPEAK_TOPIC = 0x10
+    MANAGE_USER = 0x20
+    UPLOAD_MULTIPLE_FILES = 0x40
+    TEACHER = 0x400
+    ADMINISTER = 0x800
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -34,7 +38,8 @@ class Role(db.Model):
                           Permission.COMMENT |
                           Permission.WRITE_ARTICLES |
                           Permission.MODERATE_COMMENTS, False),
-            'Administrator': (0xff, False)
+            'Teacher' : (0x7ff, False),
+            'Administrator': (0xfff, False)
         }
         for r in roles:
             role = Role.query.filter_by(name=r).first()
@@ -181,10 +186,10 @@ class User(UserMixin, db.Model):
         db.session.delete(self)
     
     def set_moderate(self):
-        if (self.role_id == 1):
-            self.role_id = 2
+        if not (self.role.permissions & Permission.MODERATE_COMMENTS == Permission.MODERATE_COMMENTS):
+            self.role.permissions = self.role.permissions | Permission.MODERATE_COMMENTS
         else:
-            self.role_id = 1
+            self.role.permissions = self.role.permissions ^ Permission.MODERATE_COMMENTS
         db.session.add(self)
 
     def generate_reset_token(self, expiration=3600):
@@ -209,6 +214,9 @@ class User(UserMixin, db.Model):
 
     def is_administrator(self):
         return self.can(Permission.ADMINISTER)
+
+    def is_teacher(self):
+        return self.can(Permission.TEACHER)
 
     def ping(self):
         self.last_seen = datetime.utcnow()

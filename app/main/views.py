@@ -272,7 +272,7 @@ def followed_by(username):
 @login_required
 def show_all():
     resp = make_response(redirect(url_for('main.index')))
-    resp.set_cookie('show_followed', '', max_age=30*24*60*60)
+    resp.set_cookie('show_followed', '', max_age=24*60*60)
     return resp
 
 
@@ -280,7 +280,7 @@ def show_all():
 @login_required
 def show_followed():
     resp = make_response(redirect(url_for('main.index')))
-    resp.set_cookie('show_followed', '1', max_age=30*24*60*60)
+    resp.set_cookie('show_followed', '1', max_age=24*60*60)
     return resp
 
 @main.route('/moderate')
@@ -307,12 +307,13 @@ def moderate_enable(id):
     return redirect(url_for('.moderate',
                             page=request.args.get('page', 1, type=int)))
 
-
 @main.route('/moderate/disable/<int:id>')
 @login_required
 @permission_required(Permission.MODERATE_COMMENTS)
 def moderate_disable(id):
     comment = Comment.query.get_or_404(id)
+    if comment.author.is_administrator():
+        abort(403)
     comment.disabled = True
     db.session.add(comment)
     return redirect(url_for('.moderate',
@@ -334,7 +335,8 @@ def about():
     user = User.query.get(1)
     page = request.args.get('page', 1, type=int)
     config = Setting.query.filter_by(name='ABOUT_IDENTIFY').first()
-    pagination = Post.query.filter(Post.author.has(role_id=3),
+    filters_list = [(e.id) for e in Role.query.all() if (e.permissions & Permission.ADMINISTER == Permission.ADMINISTER)]
+    pagination = Post.query.filter(Role.id.in_(filters_list),
                         Post.body_html.like(f"%{config.value}%")
                  ).order_by(Post.timestamp.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
@@ -425,8 +427,9 @@ def download_file():
     page = request.args.get('page', 1, type=int)
     not_show = Setting.query.filter_by(name='NOT_SHOW_FILE').first().value
     not_show = f"%{not_show}%"
-    pagination = Document.query.filter((Document.name.notlike(not_show)) &
-                                          Document.author_data.has(role_id=3)).order_by(Document.name.desc()).paginate(
+    filters_list = [(e.id) for e in Role.query.all() if (e.permissions & Permission.TEACHER == Permission.TEACHER)]
+    pagination = Document.query.join(User).join(Role).filter((Document.name.notlike(not_show)) &
+                                          Role.id.in_(filters_list)).order_by(Document.name.desc()).paginate(
                        page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
                        error_out=False)
     files = pagination.items
@@ -461,7 +464,7 @@ def rename_file(filename):
     previous = request.args.get('previous','main.index')
     form = TypeForm()
     file = Document.query.filter_by(name=filename).first_or_404()
-    if file.author_id != current_user.id and not current_user.is_administrator():
+    if file.author_id != current_user.id and not current_user.is_teacher() or file.author_data.is_administrator():
         abort(403)
     extension = file.name.split('.')[-1]
     filename = ''.join(file.name.split('.')[0:-1])
@@ -482,7 +485,7 @@ def rename_file(filename):
 @login_required
 def delete_file(filename):
     returned_file = Document.query.filter_by(name=filename).first_or_404()
-    if returned_file.id != current_user.id:
+    if returned_file.id != current_user.id and not current_user.is_administrator():
         abort(403)
     returned_file.delete()
     flash('Deleted file')
@@ -501,7 +504,8 @@ def like(post_id):
 def rank():
     previous = request.args.get('previous','main.index')
     page = request.args.get('page', 1, type=int)
-    posts = Post.query.filter(Post.author.has(role_id=1) | Post.author.has(role_id=2)).all()
+    filters_list = [(e.id) for e in Role.query.all() if not (e.permissions & Permission.TEACHER == Permission.TEACHER)]
+    posts = Post.query.join(User).join(Role).filter(Role.id.in_(filters_list)).all()
     posts.sort(reverse=True, key=condition)
     user = posts[:49]
     return render_template('rank.html', requests=user, page=page, previous=previous)
@@ -514,11 +518,11 @@ def speak_topic():
     title = "Weekly Speak Topic"
     page = request.args.get('page', 1, type=int)
     config = Setting.query.filter_by(name="SPEAK_TOPIC_IDENTIFY").first()
-    pagination = Post.query.filter(Post.author.has(role_id=3),
-                        Post.body_html.like(f"%{config.value}%")
-                 ).order_by(Post.timestamp.desc()).paginate(
-        page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
-        error_out=False)
+    filters_list = [(e.id) for e in Role.query.all() if (e.permissions & Permission.WRITE_WEEKLY_SPEAK_TOPIC == Permission.WRITE_WEEKLY_SPEAK_TOPIC)]
+    pagination = Post.query.join(User).join(Role).filter((Post.body_html.like(f"%{config.value}%"))).filter(Role.id.in_(filters_list)
+                                              ).order_by(Post.timestamp.desc()).paginate(
+                                                         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+                                                         error_out=False)
     posts = pagination.items
     return render_template('list_post.html', posts=posts, title=title, previous=previous,
                                       pagination=pagination)
@@ -532,9 +536,9 @@ def topic_post(id):
         abort(403)
     page = request.args.get('page', 1, type=int)
     hashtag = find_hashtag(post.body_html)
-    pagination = Post.query.filter(Post.body_html.like(f"%#{hashtag}%") &
-                                 (Post.author.has(role_id=1) | 
-                                 Post.author.has(role_id=2)) ).paginate(
+    filters_list = [(e.id) for e in Role.query.all() if not (e.permissions & Permission.WRITE_WEEKLY_SPEAK_TOPIC == Permission.WRITE_WEEKLY_SPEAK_TOPIC)]
+    pagination = Post.query.join(User).join(Role).filter(Post.body_html.like(f"%#{hashtag}%") &
+                                 Role.id.in_(filters_list)).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
         error_out=False)
     posts = pagination.items
@@ -551,7 +555,8 @@ def user_manual():
     title = "User Manual"
     page = request.args.get('page', 1, type=int)
     config = Setting.query.filter_by(name="USER_MANUAL_IDENTIFY").first()
-    pagination = Post.query.filter(Post.author.has(role_id=3),
+    filters_list = [(e.id) for e in Role.query.all() if (e.permissions & Permission.ADMINISTER == Permission.ADMINISTER)]
+    pagination = Post.query.join(User).join(Role).filter(Role.id.in_(filters_list),
                         Post.body_html.like(f"%{config.value}%")
                  ).order_by(Post.timestamp.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
@@ -567,7 +572,8 @@ def admin_manual():
     title = "Administrator Manual"
     page = request.args.get('page', 1, type=int)
     config = Setting.query.filter_by(name="ADMIN_MANUAL_IDENTIFY").first()
-    pagination = Post.query.filter(Post.author.has(role_id=3),
+    filters_list = [(e.id) for e in Role.query.all() if (e.permissions & Permission.ADMINISTER == Permission.ADMINISTER)]
+    pagination = Post.query.filter(Role.id.in_(filters_list),
                         Post.body_html.like(f"%{config.value}%")
                  ).order_by(Post.timestamp.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],

@@ -14,8 +14,10 @@
       <tr>
         <th>Name</th>
         <th>Value</th>
+       {% if current_user.is_administrator() %}
         <th>Edit</th>
         <th>Delete</th>
+       {% endif %}
       </tr>
     </thead>
     <tbody>
@@ -28,14 +30,18 @@
            {% else %} {{ setting.value }}
            {% endif %}
         </td>
+      {% if current_user.is_administrator() %}
         <td><a href='{{ url_for('admin.edit_config', id=setting.id) }}'><span class="badge"><span class="glyphicon glyphicon-pencil"></span> Edit</span></a></td>
         <td><a href='{{ url_for('admin.del_config', id=setting.id) }}'><span class="badge"><span class="glyphicon glyphicon-trash"></span> Delete</span></a></td>
+      {% endif %}
       </tr>
      {% endfor %}
 
     </tbody>
   </table>
-  <a href='{{ url_for('admin.add_config') }}' style="float: right;" class="btn btn-default btn-lg">Add Configuration</a>
+  {% if current_user.is_administrator() %}
+    <a href='{{ url_for('admin.add_config') }}' style="float: right;" class="btn btn-default btn-lg">Add Configuration</a>
+  {% endif %}
 </div>
 
 {% if pagination %}

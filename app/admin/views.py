@@ -11,7 +11,7 @@ from ..decorators import admin_required, permission_required
 
 @admin.route('/config')
 @login_required
-@admin_required
+@permission_required(Permission.TEACHER)
 def configuration():
     previous = request.args.get('previous','main.index')
     title = "Configuration"
@@ -78,11 +78,10 @@ def del_config(id):
 
 @admin.route('/confirm')
 @login_required
-@admin_required
+@permission_required(Permission.MANAGE_USER)
 def confirm():
     previous = request.args.get('previous','main.index')
     page = request.args.get('page', 1, type=int)
-    #tmp = User.query.order_by(User.confirmed.asc())
     pagination = User.query.order_by(User.confirmed.asc()).order_by(User.member_since.desc()).paginate(
                      page, per_page=current_app.config['FLASKY_REQUEST_PER_PAGE'],
                      error_out=False)
@@ -92,37 +91,48 @@ def confirm():
 
 @admin.route('/confirm/enable/<int:id>')
 @login_required
-@admin_required
-#@login.user_loader
+@permission_required(Permission.MANAGE_USER)
 def confirm_enable(id):
     conf = User.query.get_or_404(id)
-    conf.confirm_acc()
+    if conf.is_administrator():
+        abort(403)
+    else:
+        conf.confirm_acc()
     return redirect(url_for('admin.confirm', page=request.args.get('page', 1, type=int)))
 
 
 @admin.route('/confirm/disable/<int:id>')
 @login_required
-@admin_required
+@permission_required(Permission.MANAGE_USER)
 def confirm_disable(id):
     conf = User.query.get_or_404(id)
-    conf.confirm_acc()
+    if conf.is_administrator():
+        abort(403)
+    else:
+        conf.confirm_acc()
     return redirect(url_for('admin.confirm', page=request.args.get('page', 1, type=int)))
 
 
 @admin.route('/confirm/delete/<int:id>')
 @login_required
-@admin_required
+@permission_required(Permission.MANAGE_USER)
 def delete(id):
     conf = User.query.get_or_404(id)
-    conf.delete()
+    if conf.is_administrator():
+        abort(403)
+    else:
+        conf.delete()
     return redirect(url_for('admin.confirm', page=request.args.get('page', 1, type=int)))
     
 @admin.route('/confirm/set_moderate/<int:id>')
 @login_required
-@admin_required
+@permission_required(Permission.MANAGE_USER)
 def set_moderate(id):
     conf = User.query.get_or_404(id)
-    conf.set_moderate()
+    if conf.is_administrator():
+        abort(403)
+    else:
+        conf.set_moderate()
     return redirect(url_for('admin.confirm', page=request.args.get('page', 1, type=int)))
     
 def allowed_file(filename):
@@ -132,7 +142,7 @@ def allowed_file(filename):
 
 @admin.route('/multiple_uploads', methods = ['POST', 'GET'])
 @login_required
-@admin_required
+@permission_required(Permission.UPLOAD_MULTIPLE_FILES)
 def multiple_uploads():
     previous = request.args.get('previous','main.index')
     form = MultipleUploadForm()
