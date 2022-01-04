@@ -138,7 +138,7 @@ def set_moderate(id):
 def allowed_file(filename):
     config = Setting.query.filter_by(name='ALLOWED_EXTENSIONS').first().name.split("|")
     return '.' in filename and \
-           filename.rsplit('.', 1)[1] in config
+           filename.rsplit('.', 1)[-1] in config
 
 @admin.route('/multiple_uploads', methods = ['POST', 'GET'])
 @login_required

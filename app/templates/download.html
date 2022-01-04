@@ -12,7 +12,13 @@
 <div class="post-tabs">
     {{ wtf.quick_form(form) }}
 </div>
-
+<div>
+<h4><b>How to search:</b><br></h4>
+<h5>
+     Search with file extension. Example: %.mp4; %.doc;...<br>
+     Search with not fully name. Example: %phrase%;...
+</h5>
+</div>
 {% include '_uploads_files.html' %}
 
 {% if pagination %}

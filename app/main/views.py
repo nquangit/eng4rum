@@ -41,19 +41,28 @@ def index():
         db.session.add(post)
         return redirect(url_for('main.index'))
     page = request.args.get('page', 1, type=int)
-    show_followed = False
-    if current_user.is_authenticated:
-        show_followed = bool(request.cookies.get('show_followed', ''))
-    if show_followed:
-        query = current_user.followed_posts
+    index_show = request.cookies.get('index_show', '')
+    if index_show == 'show_followed':
+        if current_user.is_authenticated:
+            query = current_user.followed_posts
+        else:
+            abort(403)
+    elif index_show == 'weekly_speak_post':
+        config = Setting.query.filter_by(name="SPEAK_TOPIC_IDENTIFY").first()
+        filters_list = [(e.id) for e in Role.query.all() if (e.permissions & Permission.WRITE_WEEKLY_SPEAK_TOPIC == Permission.WRITE_WEEKLY_SPEAK_TOPIC)]
+        filters_list_hashtag = [find_hashtag(e.body_html) for e in Post.query.join(User).join(Role).filter((Post.body_html.like(f"%{config.value}%"))).filter(Role.id.in_(filters_list)).all()]
+        filters_list_post = [(e.id) for f in filters_list_hashtag for e in Post.query.all() if f in e.body_html]
+        filters_list_user = [(e.id) for e in Role.query.all() if not (e.permissions & Permission.WRITE_WEEKLY_SPEAK_TOPIC == Permission.WRITE_WEEKLY_SPEAK_TOPIC)]
+        query = Post.query.join(User).join(Role).filter(Post.id.in_(filters_list_post) & Role.id.in_(filters_list_user))
     else:
+        index_show = ""
         query = Post.query
     pagination = query.order_by(Post.timestamp.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
         error_out=False)
     posts = pagination.items
     return render_template('index.html', form=form, posts=posts, previous=previous,
-                            show_followed=show_followed, pagination=pagination)
+                            index_show=index_show, pagination=pagination)
 
 @main.route('/user/<username>')
 def user(username):
@@ -73,6 +82,7 @@ def user(username):
                                                          page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
                                                          error_out=False)
     else:
+        show = ''
         pagination = user.posts.order_by(Post.timestamp.desc()).paginate(
             page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
             error_out=False)
@@ -272,15 +282,21 @@ def followed_by(username):
 @login_required
 def show_all():
     resp = make_response(redirect(url_for('main.index')))
-    resp.set_cookie('show_followed', '', max_age=24*60*60)
+    resp.set_cookie('index_show', '', max_age=24*60*60)
     return resp
-
 
 @main.route('/followed')
 @login_required
 def show_followed():
     resp = make_response(redirect(url_for('main.index')))
-    resp.set_cookie('show_followed', '1', max_age=24*60*60)
+    resp.set_cookie('index_show', 'show_followed', max_age=24*60*60)
+    return resp
+
+@main.route('/weekly_speak_post')
+@login_required
+def weekly_speak_post():
+    resp = make_response(redirect(url_for('main.index')))
+    resp.set_cookie('index_show', 'weekly_speak_post', max_age=24*60*60)
     return resp
 
 @main.route('/moderate')

@@ -20,6 +20,9 @@ def make_shell_context():
                 Permission=Permission, Post=Post, Comment=Comment, Like=Like, Setting=Setting)
 manager.add_command("shell", Shell(make_context=make_shell_context))
 manager.add_command('db', MigrateCommand)
+# [must] from flask_script import Server
+# If you want to run at another address or port
+#manager.add_command("runserver", Server(host=app.config['HOST'], port=app.config['PORT']))
 
 
 @manager.command
