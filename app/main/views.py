@@ -480,7 +480,9 @@ def rename_file(filename):
     previous = request.args.get('previous','main.index')
     form = TypeForm()
     file = Document.query.filter_by(name=filename).first_or_404()
-    if file.author_id != current_user.id and not current_user.is_teacher() or file.author_data.is_administrator():
+    if file.author_id != current_user.id and not current_user.is_teacher():
+        abort(403)
+    if file.author_data.is_administrator() and not current_user.is_administrator():
         abort(403)
     extension = file.name.split('.')[-1]
     filename = ''.join(file.name.split('.')[0:-1])
