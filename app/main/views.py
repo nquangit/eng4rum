@@ -293,7 +293,6 @@ def show_followed():
     return resp
 
 @main.route('/weekly_speak_post')
-@login_required
 def weekly_speak_post():
     resp = make_response(redirect(url_for('main.index')))
     resp.set_cookie('index_show', 'weekly_speak_post', max_age=24*60*60)

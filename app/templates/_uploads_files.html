@@ -24,7 +24,7 @@
            <div class="post-footer">
               <a class="btn btn-default btn-xs" href="{{ url_for('main.view', filename=file.name) }}">View</a>
            {% if myfiles or current_user.is_teacher() %}
-           {% if file.author_data.is_administrator() and not current_user.is_administrator() %}
+           {% if file.author_data.is_administrator() and current_user.is_administrator() %}
               <a class="btn btn-danger btn-xs" href="{{ url_for('main.rename_file', filename=file.name) }}">Rename</a>
            {% endif %}
            {% endif %}
