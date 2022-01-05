@@ -186,10 +186,12 @@ class User(UserMixin, db.Model):
         db.session.delete(self)
     
     def set_moderate(self):
-        if not (self.role.permissions & Permission.MODERATE_COMMENTS == Permission.MODERATE_COMMENTS):
-            self.role.permissions = self.role.permissions | Permission.MODERATE_COMMENTS
-        else:
-            self.role.permissions = self.role.permissions ^ Permission.MODERATE_COMMENTS
+        role_moderator_id = Role.query.filter_by(name='Moderator').first().id
+        role_user_id = Role.query.filter_by(name='User').first().id
+        if self.role_id == role_moderator_id:
+            self.role_id = role_user_id
+        elif self.role_id == role_user_id:
+            self.role_id = role_moderator_id
         db.session.add(self)
 
     def generate_reset_token(self, expiration=3600):
