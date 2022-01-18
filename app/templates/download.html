@@ -5,20 +5,58 @@
 {% block title %}Eng4rum - Download{% endblock %}
 
 {% block page_content %}
+<style>
+.nav-tabs { border-bottom: 3px solid #DDD; }
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover { border-width: 0; }
+.nav-tabs > li > a { border: none; color: #ffffff;background: #23bab5; }
+.nav-tabs > li.active > a, .nav-tabs > li > a:hover { border: none;  color: #5a4080 !important; background: #fff; }
+.nav-tabs > li > a::after { content: ""; background: #5a4080; height: 2px; position: absolute; width: 100%; left: 0px; bottom: -1px; transition: all 250ms ease 0s; transform: scale(0); }
+.nav-tabs > li.active > a::after, .nav-tabs > li:hover > a::after { transform: scale(1); }
+.tab-nav > li > a::after { background: ##5a4080 none repeat scroll 0% 0%; color: #fff; }
+.nav-tabs > li  { width:25%; text-align:center; }
+.card {background: #FFF none repeat scroll 0% 0%; box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.3); margin-bottom: 30px; }
+
+@media all and (max-width:724px){
+.nav-tabs > li > a > span {display:none;}	
+.nav-tabs > li > a {padding: 5px 5px;}
+}
+
+</style>
+
 <div class="page-header">
     <h1>Download file</h1>
 </div>
 
-<div class="post-tabs">
-    {{ wtf.quick_form(form) }}
-</div>
-<div>
+<div><i>
 <h4><b>How to search:</b><br></h4>
 <h5>
      Search with file extension. Example: %.mp4; %.doc;...<br>
      Search with not fully name. Example: %phrase%;...
-</h5>
+    
+</h5> </i>
 </div>
+<div>
+    {{ wtf.quick_form(searchform, extra_classes="form-inline center-block") }}
+</div>
+<div class="post-tabs">
+<div class="card">
+   <ul class="nav nav-tabs">
+       <li class="nav-item {% if file_show == '' %}active{% endif %}">
+           <a class="nav-link" role="tab" aria-controls="home" aria-selected="true" href="{{ url_for('.show_all_file') }}">All</a>
+       </li>
+       <li class="nav-item {% if file_show == 'documents' %}active{% endif %}">
+           <a class="nav-link" role="tab" aria-controls="home" aria-selected="true" href="{{ url_for('.show_documents') }}">Documents</a>
+       </li>
+       <li class="nav-item {% if file_show == 'exercises' %}active{% endif %}">
+           <a class="nav-link" role="tab" aria-controls="home" aria-selected="true" href="{{ url_for('.show_exercises') }}">Exercises</a>
+       </li>
+       <li class="nav-item {% if file_show == 'in_post' %}active{% endif %}">
+           <a class="nav-link" role="tab" aria-controls="home" aria-selected="true" href="{{ url_for('.show_in_post') }}">In post</a>
+       </li>
+   </ul>
+</div>
+</div>
+
 {% include '_uploads_files.html' %}
 
 {% if pagination %}

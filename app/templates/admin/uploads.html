@@ -40,7 +40,9 @@
               <a class="btn btn-danger btn-xs" href="{{ url_for('main.view', filename=file.name) }}">View</a>
             {% if not file.author_data.is_administrator() or current_user.is_administrator() %}
               <a class="btn btn-danger btn-xs" href="{{ url_for('main.rename_file', filename=file.name) }}">Rename</a>
-              <a class="btn btn-danger btn-xs" href="{{ url_for('main.delete_file', filename=file.name) }}">Delete</a>
+              <a class="btn btn-danger btn-xs" href="javascript:;" onclick="if(!confirm('Are you sure?')){return false};delete_this_file('{{ file.name }}')">
+                   <span class="glyphicon glyphicon-trash"></span> Delete
+              </a>
             {% endif %}
            </div>
         </a>
@@ -55,6 +57,19 @@ function myFunction(copyText) {
   navigator.clipboard.writeText(copyText);
   alert("Copied the Source Link: " + copyText);
 }
+var csrf_token = "{{ csrf_token() }}";
+function delete_this_file(file_id){
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+        $.post( "/download/delete/" + file_id , {}, function(data, status){
+                                                    if(alert("Data: " + data + "\nStatus: " + status)) {location.reload(true)} else {location.reload(true)};
+                                                    });
+    }
 </script>
 
 {% if pagination %}

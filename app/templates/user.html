@@ -4,58 +4,205 @@
 {% block title %}Eng4rum User - {{ user.username }}{% endblock %}
 
 {% block page_content %}
-<div class="page-header">
-  <img class="img-rounded img-thumbnail img-circle profile-thumbnail" src="{{ user.gravatar(size=256) }}">
-  <div class="profile-header">
-     <h1>{{ user.username }} {% if user.is_administrator() %} 
-                                     [Admin] 
-                             {% elif user.can(Permission.MODERATE_COMMENTS) %} 
-                             [Moderate] {% endif%}
-     </h1>
-     {% if user.name or user.location %}
-     <p>
-         {% if user.name %}{{ user.name }}{% endif %}
-         {% if user.location %}
-             From <a href="http://maps.google.com/?q={{ user.location }}">{{ user.location }}</a>
-         {% endif %}
-     </p>
-     {% endif %}
-     {% if current_user.is_administrator() %}
-     <p><a href="mailto:{{ user.email }}">{{ user.email }}</a></p>
-     {% endif %}
-     {% if user.about_me %}<p>{{ user.about_me }}</p>{% endif %}
-     <p>Member since {{ moment(user.member_since).format('L') }}. Last seen {{ moment(user.last_seen).fromNow() }}.</p>
-     <p>{{ user.posts.count() }} blog posts.  {{ user.comments.count() }} comments.</p>
-     <p>
-        {% if current_user.can(Permission.FOLLOW) and user != current_user and not user.is_administrator() %}
-            {% if not current_user.is_following(user) %}
-            <a href="{{ url_for('.follow', username=user.username) }}" class="btn btn-primary">Follow</a>
-            {% else %}
-            <a href="{{ url_for('.unfollow', username=user.username) }}" class="btn btn-default">Unfollow</a>
-            {% endif %}
-        {% endif %}
-        <a href="{{ url_for('.followers', username=user.username) }}">Followers: <span class="badge">{{ user.followers.count() - 1}}</span></a>
-        <a href="{{ url_for('.followed_by', username=user.username) }}">Following: <span class="badge">{{ user.followed.count() - 1}}</span></a>
-        {% if current_user.is_authenticated and user != current_user and user.is_following(current_user) %}
-        | <span class="label label-default">Follows you</span>
-        {% endif %}
-      </p>
-     <p>
-       {% if user == current_user %}
-       <a class="btn btn-default" href="{{ url_for('.edit_profile')}}">Edit Profile</a>
-       {% endif %}
-       {% if current_user.is_administrator() and not user.is_administrator() %}
-       <a class="btn btn-danger" href="{{ url_for('.edit_profile_admin', id=user.id)}}">Edit Profile [Admin]</a>
-       {% endif %}
-     </p>
-   </div>
+<style>
+.profile-container .profile-header .profile-stats .inlinestats-col:not(:last-child) {
+    border-right: 1px solid #eee;
+}
+.profile-container .profile-header .profile-stats .inlinestats-col {
+    padding-top: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-family: 'Lucida Sans','trebuchet MS',Arial,Helvetica;
+    border-top: 1px solid #eee;
+    min-height: 55px;
+}
+.profile-container .profile-header .profile-stats .stats-col .stats-value {
+    display: block;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 30px;
+    font-family: 'Lucida Sans','trebuchet MS',Arial,Helvetica;
+}
+.pink {
+    color: #e75b8d!important;
+}
+.profile-container .profile-header .profile-stats .stats-col:not(:last-child) {
+    border-right: 1px solid #eee;
+}
+.profile-container .profile-header .profile-stats .stats-col {
+    margin: 30px 0;
+    text-align: center;
+}
+.profile-container .profile-header .profile-stats {
+    min-height: 175px;
+    border-right: 1px solid #eee;
+}
+.profile-container .profile-header .profile-info .header-information {
+    line-height: 23px;
+    margin-top: 15px;
+    margin-left: 35px;
+    margin-right: 30px;
+}
+.profile-container .profile-header .profile-info .btn-follow {
+    position: absolute;
+    top: 45px;
+    right: 40px;
+}
+.btn-palegreen, .btn-palegreen:focus {
+    background-color: #a0d468!important;
+    border-color: #a0d468;
+    color: #fff;
+}
+.profile-container .profile-header .profile-info .header-fullname {
+    font: 30px 'Lucida Sans','trebuchet MS',Arial,Helvetica;
+    margin-top: 27px;
+    display: block;
+    margin-left: 30px;
+    margin-right: 100px;
+}
+.profile-container .profile-header .profile-info {
+    min-height: 175px;
+    border-right: 1px solid #eee;
+    padding: 15px 40px 35px 0;
+}
+.profile-container .profile-header .header-avatar {
+    width: 125px;
+    height: 125px;
+    -webkit-border-radius: 50%;
+    -webkit-background-clip: padding-box;
+    -moz-border-radius: 50%;
+    -moz-background-clip: padding;
+    border-radius: 50%;
+    background-clip: padding-box;
+    border: 5px solid #f5f5f5;
+    -webkit-box-shadow: 0 0 10px rgba(0,0,0,.15);
+    -moz-box-shadow: 0 0 10px rgba(0,0,0,.15);
+    box-shadow: 0 0 10px rgba(0,0,0,.15);
+    margin: 25px auto;
+}
+.profile-container .profile-header {
+    min-height: 175px;
+    margin: 15px 15px 0;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.35);
+    -moz-box-shadow: 0 1px 2px rgba(0,0,0,.35);
+    box-shadow: 0 1px 2px rgba(0,0,0,.35);
+    background-color: #fbfbfb;
+}
+
+.nav-tabs { border-bottom: 3px solid #DDD; }
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover { border-width: 0; }
+.nav-tabs > li > a { border: none; color: #ffffff;background: #23bab5; }
+.nav-tabs > li.active > a, .nav-tabs > li > a:hover { border: none;  color: #5a4080 !important; background: #fff; }
+.nav-tabs > li > a::after { content: ""; background: #5a4080; height: 2px; position: absolute; width: 100%; left: 0px; bottom: -1px; transition: all 250ms ease 0s; transform: scale(0); }
+.nav-tabs > li.active > a::after, .nav-tabs > li:hover > a::after { transform: scale(1); }
+.tab-nav > li > a::after { background: #5a4080 none repeat scroll 0% 0%; color: #fff; }
+.nav-tabs > li  {width:33.33%; text-align:center;}
+.card {background: #FFF none repeat scroll 0% 0%; box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.3); margin-bottom: 30px; }
+
+@media all and (max-width:724px){
+.nav-tabs > li > a > span {display:none;}	
+.nav-tabs > li > a {padding: 5px 5px;}
+}
+
+</style>
+<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
+<div class="container-fluid bootstrap snippets bootdey">
+    <div class="col-md-12">
+        <div class="profile-container">
+            <div class="profile-header row">
+                <div class="col-md-4 col-sm-12 text-center">
+                    <img src="{{ user.gravatar(size=256) }}" alt="" class="header-avatar">
+                </div>
+                <div class="col-md-8 col-sm-12 profile-info">
+                    <div class="header-fullname">
+                        {{ user.username }} {% if user.name %}- {{ user.name }}{% endif %}
+                        {% if current_user.is_authenticated and current_user.is_following(user) and user != current_user %}
+                            <a class="btn btn-xs">
+                            <i class="fa fa-check"></i>Following
+                            </a>
+                        {% endif %}
+                        {% if current_user.is_authenticated and user != current_user and user.is_following(current_user) %}
+                            <a class="btn btn-xs">
+                            <i class="fa fa-check"></i>Follows you
+                            </a>
+                       {% endif %}
+                    </div>
+                    {% if current_user.can(Permission.FOLLOW) and user != current_user %}
+                       {% if not current_user.is_following(user) %}
+                            <a href="{{ url_for('.follow', username=user.username, previous=request.path) }}" class="btn btn-palegreen btn-sm btn-follow">Follow</a>
+                       {% else %}
+                            <a href="{{ url_for('.unfollow', username=user.username, previous=request.path) }}" class="btn btn-palegreen btn-sm btn-follow">Unfollow</a>
+                       {% endif %}
+                    {% endif %}
+                    <div class="header-information">
+                        <h5>{% if user.about_me %}{{ user.about_me }}{% endif %}<h5>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-xs-12 profile-stats">
+                    <div class="row">
+                        <div class="col-md-3 col-sm-3 col-xs-12 stats-col">
+                            <div class="stats-value pink">{{ user.followed.count() - 1}}</div>
+                            <div class="stats-title">
+                            <a href="{{ url_for('.followed_by', username=user.username, previous=request.path) }}">FOLLOWING</a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-3 col-xs-12 stats-col">
+                            <div class="stats-value pink">{{ user.followers.count() - 1}}</div>
+                            <div class="stats-title">
+                               <a href="{{ url_for('.followers', username=user.username, previous=request.path) }}">FOLLOWERS</a></div>
+                            </div>
+                        <div class="col-md-3 col-sm-3 col-xs-12 stats-col">
+                            <div class="stats-value pink">{{ user.posts.count() }}</div>
+                            <div class="stats-title">POSTS</div>
+                        </div>
+                        <div class="col-md-3 col-sm-3 col-xs-12 stats-col">
+                            <div class="stats-value pink">{{ user.comments.count() }}</div>
+                            <div class="stats-title">COMMENT</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 col-sm-3 col-xs-4 inlinestats-col">
+                             {% if user.is_administrator() %} 
+                                 [Admin] 
+                             {% elif user.can(Permission.MODERATE_COMMENTS) %} [Moderate]
+                             {% elif user.can(Permission.TEACHER) %} [Teacher]
+                             {% else %} [User]
+                             {% endif%}
+                             <br>
+                            {% if user == current_user %}
+                                <a class="btn btn-default" href="{{ url_for('.edit_profile', previous=request.path)}}">Edit Profile</a><br>
+                            {% endif %}
+                            {% if current_user.is_administrator() and not user.is_administrator() %}
+                                <a class="btn btn-danger" href="{{ url_for('.edit_profile_admin', id=user.id, previous=request.path)}}">Edit Profile [Admin]</a>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-4 inlinestats-col">
+                            <i class="glyphicon glyphicon-map-marker"></i> {% if user.location %}{{ user.location }}{% endif %}<br><a href="mailto: {{ user.email }}">{{ user.email }}</a>
+                        </div>
+                        <div class="col-md-5 col-sm-5 col-xs-4 inlinestats-col">
+                            <strong>Member since</strong>: {{ moment(user.member_since).format('L') }}.<br> Last seen {{ moment(user.last_seen).fromNow() }}.
+                        </div>
+                    </div>
+                </div>
+            </div>   
+        </div>
+    </div>
 </div>
+
 <div class="post-tabs">
+<div class="card">
    <ul class="nav nav-tabs">
-       <li{% if show == '' %} class="active"{% endif %}><a href="{{ url_for('.user_show_all', username=user.username) }}" id='all'>All Post</a></li>
-       <li{% if show == 'image' %} class="active"{% endif %}><a href="{{ url_for('.image_gallery', username=user.username) }}" id='image_gallery'>Image Gallery</a></li>
-       <li{% if show == 'files' %} class="active"{% endif %}><a href="{{ url_for('.user_show_files', username=user.username) }}" id='files'>Uploaded Files</a></li>
+       <li class="nav-item {% if show == '' %}active{% endif %}">
+           <a class="nav-link" role="tab" aria-controls="home" aria-selected="true" href="{{ url_for('.user_show_all', username=user.username, previous=request.path) }}" id='all'>All Post</a>
+       </li>
+       <li class="nav-item {% if show == 'image' %}active{% endif %}">
+           <a class="nav-link" role="tab" aria-controls="home" aria-selected="true" href="{{ url_for('.image_gallery', username=user.username, previous=request.path) }}" id='image_gallery'>Image Gallery</a>
+       </li>
+       <li class="nav-item {% if show == 'files' %}active{% endif %}">
+           <a class="nav-link" role="tab" aria-controls="home" aria-selected="true" href="{{ url_for('.user_show_files', username=user.username, previous=request.path) }}" id='files'>Uploaded Files</a>
+       </li>
    </ul>
+</div>
    {% if show == ''  %}
           {% include '_fullposts.html' %}
    {% elif show == 'files' %}
@@ -65,6 +212,7 @@
           {% include '_image_gallery.html' %}
    {% endif %}
 </div>
+
 
 {% if pagination %}
 <div class="pagination">

@@ -1,17 +1,15 @@
 
-<br><h3>Uploaded files</h3>
-    
 <ul class="comments">
 
 {% for file in files %}
 <li class="comment">
        <div class="comment-thumbnail">
-           <a href="{{ url_for('.user', username=file.author_data.username) }}">
+           <a href="{{ url_for('.user', username=file.author_data.username, previous=request.path) }}">
                <img class="img-rounded profile-thumbnail" src="{{ file.author_data.gravatar(size=40) }}">
            </a>
        </div>
        <div class="comment-content">
-           <div class="comment-author">By: <a href="{{ url_for('.user', username=file.author_data.username) }}">{{ file.author_data.username }}</a>
+           <div class="comment-author">By: <a href="{{ url_for('.user', username=file.author_data.username, previous=request.path) }}">{{ file.author_data.username }}</a>
            {% if file.post == 1 %}
                 <p class="label label-success">IN POST</p>
            {% endif %}
@@ -23,13 +21,18 @@
            </div>
            <div class="post-footer">
               <a class="btn btn-default btn-xs" href="{{ url_for('main.view', filename=file.name) }}">View</a>
-           {% if myfiles or current_user.is_teacher() %}
-           {% if file.author_data.is_administrator() and current_user.is_administrator() %}
-              <a class="btn btn-danger btn-xs" href="{{ url_for('main.rename_file', filename=file.name) }}">Rename</a>
-           {% endif %}
+           {% if current_user.is_teacher() and file.author_data.id==current_user.id %}
+             {% if file.author_data.is_administrator() %}
+               {% if current_user.is_administrator() %}
+                   <a class="btn btn-danger btn-xs" href="{{ url_for('main.rename_file', filename=file.name, previous=request.path) }}">Rename</a>
+               {% endif %}
+             {% else %} <a class="btn btn-danger btn-xs" href="{{ url_for('main.rename_file', filename=file.name, previous=request.path) }}">Rename</a>
+             {% endif %}
            {% endif %}
            {% if current_user.is_administrator() or file.author_id==current_user.id %}
-              <a class="btn btn-danger btn-xs" href="{{ url_for('main.delete_file', filename=file.name) }}">Delete</a>
+              <a class="btn btn-danger btn-xs" href="javascript:;" onclick="if(!confirm('Are you sure?')){return false};delete_this_file('{{ file.name }}')">
+                   <span class="glyphicon glyphicon-trash"></span> Delete
+              </a>
            {% endif %}
            </div>
         </a>
@@ -44,4 +47,17 @@ function myFunction(copyText) {
   navigator.clipboard.writeText(copyText);
   alert("Copied the Source Link: " + copyText);
 }
+var csrf_token = "{{ csrf_token() }}";
+function delete_this_file(file_name){
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+        $.post( "/download/delete/" + file_name , {}, function(data, status){
+                                                      if(alert("Data: " + data + "\nStatus: " + status)) {location.reload(true)} else {location.reload(true)};
+                                                      });
+    }
 </script>

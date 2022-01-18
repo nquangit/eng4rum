@@ -32,7 +32,11 @@
         </td>
       {% if current_user.is_administrator() %}
         <td><a href='{{ url_for('admin.edit_config', id=setting.id) }}'><span class="badge"><span class="glyphicon glyphicon-pencil"></span> Edit</span></a></td>
-        <td><a href='{{ url_for('admin.del_config', id=setting.id) }}'><span class="badge"><span class="glyphicon glyphicon-trash"></span> Delete</span></a></td>
+        <td>
+            <a href="javascript:;" onclick="if(!confirm('Are you sure to delete {{ setting.name }} configuration?')){return false};delete_this_config({{ setting.id }})">
+              <span class="badge"><span class="glyphicon glyphicon-trash"></span> Delete</span></span>
+            </a>
+        </td>
       {% endif %}
       </tr>
      {% endfor %}
@@ -49,4 +53,21 @@
    {{ macros.pagination_widget(pagination, '.configuration') }}
 </div>
 {% endif %}
+
+<script>
+    var csrf_token = "{{ csrf_token() }}";
+    function delete_this_config(config_id){
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+        $.post( "/admin/config/" + config_id + "/delete" , {}, function(data, status){
+                                                               if(alert("Data: " + data + "\nStatus: " + status)) {location.reload(true)} else {location.reload(true)};
+                                                               });
+    }
+</script>
+
 {% endblock %}

@@ -5,17 +5,17 @@
    {% for comment in comments %}
    <li class="comment">
        <div class="comment-thumbnail">
-           <a href="{{ url_for('.user', username=comment.author.username) }}">
+           <a href="{{ url_for('.user', username=comment.author.username, previous=request.path) }}">
                <img class="img-rounded profile-thumbnail" src="{{ comment.author.gravatar(size=40) }}">
            </a>
        </div>
        <div class="comment-content">
            <div class="comment-date">Commented: {{ moment(comment.timestamp).fromNow() }}</div>
-           <div class="comment-author"><a href="{{ url_for('.user', username=comment.author.username) }}">{{ comment.author.username }}</a>
+           <div class="comment-author"><a href="{{ url_for('.user', username=comment.author.username, previous=request.path) }}">{{ comment.author.username }}</a>
            {% if comment.author.name %} {{ comment.author.name }} {% endif %}
            {% if comment.author.is_administrator() %} [Admin] {% endif %}
-           to <a href="{{ url_for('main.post', id=comment.post_id) }}" >Post_id: {{ comment.post_id }}</a> of 
-           <a href="{{ url_for('.user', username=comment.author.username) }}" > User: {{ comment.author.username }}</a>
+           to <a href="{{ url_for('main.post', id=comment.post_id, previous=request.path) }}" >Post_id: {{ comment.post_id }}</a> of 
+           <a href="{{ url_for('.user', username=comment.author.username, previous=request.path) }}" > User: {{ comment.author.username }}</a>
            </div>
            <div class="comment-body">
               {% if comment.disabled %}
@@ -38,7 +38,7 @@
              {% endif %}
            {% endif %}
            {% if comment.author.id == current_user.id or current_user.is_administrator() %}
-              <a class="btn btn-danger btn-xs" href="{{ url_for('.moderate_disable', id=comment.id, page=page) }}">Delete</a>
+              <a class="btn btn-danger btn-xs" href="{{ url_for('.delete_cmt', id=comment.id, page=page) }}">Delete</a>
            {% endif %}
        </div>
    </li>

@@ -4,26 +4,28 @@ from werkzeug import secure_filename
 from flask_login import login_required, current_user
 from ..lib.flask_ckeditor import upload_fail, upload_success
 from . import admin
-from .forms import MultipleUploadForm, SelectForm, TypeForm, AddConfigurationForm
+from .forms import MultipleUploadForm, SelectForm, TypeForm, AddConfigurationForm, SearchForm
 from .. import db
 from ..models import Permission, Role, User, Post, Comment, Like, Document, Setting
 from ..decorators import admin_required, permission_required
+
 
 @admin.route('/config')
 @login_required
 @permission_required(Permission.TEACHER)
 def configuration():
-    previous = request.args.get('previous','main.index')
+    previous = request.args.get('previous', 'main.index')
     title = "Configuration"
     configurations = Setting.query.order_by(Setting.name.asc()).all()
     return render_template('admin/configuration.html', title=title,  previous=previous,
-                                         configurations=configurations)
+                           configurations=configurations)
+
 
 @admin.route('/config/add', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def add_config():
-    previous = request.args.get('previous','main.index')
+    previous = request.args.get('previous', 'main.index')
     title = "Add Configuration"
     form = AddConfigurationForm()
     if form.validate_on_submit():
@@ -31,20 +33,21 @@ def add_config():
             data = " "
         else:
             data = form.data.data
-        config = Setting(name = form.name.data.replace(' ','_').upper(),
-                         value = form.value.data,
-                         data = data)
+        config = Setting(name=form.name.data.replace(' ', '_').upper(),
+                         value=form.value.data,
+                         data=data)
         db.session.add(config)
         flash('Add configuration complete')
         return redirect(url_for('admin.configuration'))
-        
+
     return render_template('admin/only_form.html', title=title, form=form, previous=previous)
+
 
 @admin.route('/config/<int:id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_config(id):
-    previous = request.args.get('previous','main.index')
+    previous = request.args.get('previous', 'main.index')
     setting = Setting.query.get_or_404(id)
     if setting.data != " ":
         form = SelectForm(setting=setting)
@@ -66,28 +69,40 @@ def edit_config(id):
         form.Value.data = setting.value
     title = f"Edit Configuration: {setting.name}"
     return render_template('admin/only_form.html', title=title,  previous=previous,
-                                        form=form)
+                           form=form)
 
-@admin.route('/config/<int:id>/delete', methods=['GET', 'POST'])
+
+@admin.route('/config/<int:id>/delete', methods=['GET','POST'])
 @login_required
 @admin_required
 def del_config(id):
-    config = Setting.query.get_or_404(id)
+    config = Setting.query.get(id)
+    if config == None:
+        return "Not Found", 404
     config.delete()
-    return redirect(url_for('admin.configuration'))
+    return "Deleted Configuration"
 
-@admin.route('/confirm')
+
+@admin.route('/confirm', methods=['GET', 'POST'])
 @login_required
 @permission_required(Permission.MANAGE_USER)
 def confirm():
-    previous = request.args.get('previous','main.index')
+    form = SearchForm()
+    previous = request.args.get('previous', 'main.index')
     page = request.args.get('page', 1, type=int)
     pagination = User.query.order_by(User.confirmed.asc()).order_by(User.member_since.desc()).paginate(
-                     page, per_page=current_app.config['FLASKY_REQUEST_PER_PAGE'],
-                     error_out=False)
+        page, per_page=current_app.config['FLASKY_REQUEST_PER_PAGE'],
+        error_out=False)
     requests = pagination.items
+    if form.validate_on_submit():
+        filter_text = form.search.data
+        requests = User.query.filter(User.username.like(f"%{filter_text}%") | User.name.like(f"%{filter_text}%") | User.email.like(f"%{filter_text}%") | 
+                                       User.location.like(f"%{filter_text}%") | User.about_me.like(f"%{filter_text}%")
+                  ).order_by(User.confirmed.asc()).order_by(User.member_since.desc()).all()
+        return render_template('admin/confirm.html', requests=requests, previous=previous, form=form)
     return render_template('admin/confirm.html', requests=requests, previous=previous,
-                            pagination=pagination, page=page)
+                           pagination=pagination, page=page, form=form)
+
 
 @admin.route('/confirm/enable/<int:id>')
 @login_required
@@ -113,17 +128,20 @@ def confirm_disable(id):
     return redirect(url_for('admin.confirm', page=request.args.get('page', 1, type=int)))
 
 
-@admin.route('/confirm/delete/<int:id>')
+@admin.route('/confirm/delete/<int:id>', methods=['POST'])
 @login_required
 @permission_required(Permission.MANAGE_USER)
 def delete(id):
-    conf = User.query.get_or_404(id)
+    conf = User.query.get(id)
+    if conf == None:
+        return "Not Found", 404
     if conf.is_administrator():
-        abort(403)
-    else:
-        conf.delete()
-    return redirect(url_for('admin.confirm', page=request.args.get('page', 1, type=int)))
+        return "Abort", 403
+    conf.delete()
+    return "Deleted User", 200
     
+
+
 @admin.route('/confirm/set_moderate/<int:id>')
 @login_required
 @permission_required(Permission.MANAGE_USER)
@@ -134,17 +152,22 @@ def set_moderate(id):
     else:
         conf.set_moderate()
     return redirect(url_for('admin.confirm', page=request.args.get('page', 1, type=int)))
-    
+
+
 def allowed_file(filename):
-    config = Setting.query.filter_by(name='ALLOWED_EXTENSIONS').first().name.split("|")
+    config = Setting.query.filter_by(
+        name='ALLOWED_EXTENSIONS').first().name.split("|")
+    if config == None:
+        abort(500)
     return '.' in filename and \
            filename.rsplit('.', 1)[-1] in config
 
-@admin.route('/multiple_uploads', methods = ['POST', 'GET'])
+
+@admin.route('/multiple_uploads', methods=['POST', 'GET'])
 @login_required
 @permission_required(Permission.UPLOAD_MULTIPLE_FILES)
 def multiple_uploads():
-    previous = request.args.get('previous','main.index')
+    previous = request.args.get('previous', 'main.index')
     form = MultipleUploadForm()
     if form.validate_on_submit():
         complete = 0
@@ -154,12 +177,12 @@ def multiple_uploads():
             return redirect(url_for('admin.multiple_uploads'))
         for file in request.files.getlist('file'):
             if file:
-                filename =  secure_filename(file.filename)
+                filename = secure_filename(file.filename)
                 data = file.read()
                 document = Document(name=filename,
-                                    data = data,
-                                    post = False,
-                                    author_data = current_user._get_current_object())
+                                    data=data,
+                                    post=False,
+                                    author_data=current_user._get_current_object())
                 db.session.add(document)
                 db.session.commit()
                 flash(f'{filename} upload success.')
@@ -168,17 +191,19 @@ def multiple_uploads():
                 flash(f'No file: {file.filename}')
                 error += 1
                 return redirect(url_for('admin.multiple_uploads'))
-        flash(f'Upload success. [Total]: {complete+error}, [Complete]: {complete}, [Error]: {error}')
+        flash(
+            f'Upload success. [Total]: {complete+error}, [Complete]: {complete}, [Error]: {error}')
         return redirect(url_for('admin.multiple_uploads'))
-    
+
     page = request.args.get('page', 1, type=int)
     pagination = Document.query.order_by(Document.name.desc()).paginate(
-                                                 page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
-                                                 error_out=False)
+        page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+        error_out=False)
     files = pagination.items
-    
+
     return render_template('admin/uploads.html', form=form, files=files, previous=previous,
-                                               pagination=pagination) 
+                           pagination=pagination)
+
 
 def get_list_files(filter_file):
     filter_file = f"%{filter_file}%"

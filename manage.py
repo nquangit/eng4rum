@@ -5,6 +5,7 @@ if os.environ.get('FLASK_COVERAGE'):
     import coverage
     COV = coverage.coverage(branch=True, include='app/*')
     COV.start()
+from flask_script import Server
 from app import create_app, db
 from app.models import User, Follow, Role, Permission, Post, Comment, Like, Setting
 from flask_script import Manager, Shell
@@ -22,7 +23,7 @@ manager.add_command("shell", Shell(make_context=make_shell_context))
 manager.add_command('db', MigrateCommand)
 # [must] from flask_script import Server
 # If you want to run at another address or port
-#manager.add_command("runserver", Server(host=app.config['HOST'], port=app.config['PORT']))
+manager.add_command("runserver", Server(host="0.0.0.0", port=5000, threaded=False))
 
 
 @manager.command

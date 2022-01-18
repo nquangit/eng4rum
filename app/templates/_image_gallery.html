@@ -4,8 +4,8 @@
   {% for post in posts %}
     <div class="col-md-4">
       <div class="thumbnail">
-        <a href="{{ url_for('main.view', filename=post.name) }}" target="_blank">
-          <img src="{{ url_for('main.view', filename=post.name) }}" alt="{{ post.name }}" style="width:50%">
+        <a href="{{ url_for('main.view', filename=post.name, previous=request.path) }}" target="_blank">
+          <img src="{{ url_for('main.view', filename=post.name, previous=request.path) }}" alt="{{ post.name }}" style="width:50%">
           <div class="caption">
             <p>{{ post.name }}</p>
           </div>

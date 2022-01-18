@@ -6,9 +6,11 @@ from wtforms import ValidationError
 from flask_pagedown.fields import PageDownField
 from ..models import Role, User, Setting
 
+
 class NameForm(FlaskForm):
     name = StringField('What is your name?', vaidators=[Required()])
     submit = SubmitField('Submit')
+
 
 class EditProfileForm(FlaskForm):
     name = StringField('Real name', validators=[Length(0, 64)])
@@ -16,8 +18,10 @@ class EditProfileForm(FlaskForm):
     about_me = TextAreaField('About me')
     submit = SubmitField('Submit')
 
+
 class EditProfileAdminForm(FlaskForm):
-    email = StringField('Email', validators=[Required(), Length(1, 64), Email()])
+    email = StringField('Email', validators=[
+                        Required(), Length(1, 64), Email()])
     username = StringField('Username', validators=[
         Required(), Length(1, 64), Regexp('^[A-Za-z][A-Za-z0-9_.]*$', 0,
                                           'Usernames must have only letters, '
@@ -43,25 +47,30 @@ class EditProfileAdminForm(FlaskForm):
         if User.query.filter_by(username=field.data).first().username != self.user.username:
             raise ValidationError('Username already in use.')
 
+
 class PostForm(FlaskForm):
     body = CKEditorField("What's on your mind?", validators=[Required()])
     submit = SubmitField('Submit')
+
 
 class CommentForm(FlaskForm):
     body = StringField("Enter your comment", validators=[Required()])
     submit = SubmitField('Submit')
 
-class UploadForm(FlaskForm):
-    file         = FileField('File', validators=[Required()])
-    submit       = SubmitField('Upload')
 
-    #def validate_file(form, field):
+class UploadForm(FlaskForm):
+    file = FileField('File')
+    submit = SubmitField('Upload')
+
+    # def validate_file(form, field):
     #    if field.data:
     #        field.data = re.sub(r'[^a-z0-9_.-]', '_', field.data)
-            
+
+
 class SearchForm(FlaskForm):
-    search       = StringField("Search")
-    submit       = SubmitField('Search')
+    search = StringField("Search")
+    submit = SubmitField('Search')
+
 
 class TypeForm(FlaskForm):
     value = TextAreaField(validators=[Required()])

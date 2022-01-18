@@ -1,0 +1,94 @@
+
+<ul class="posts">
+    {% for post in posts %}
+    <li class="post" id="{{ post.id }}">
+        <div class="post-thumbnail">
+            <a href="{{ url_for('.user', username=post.author.username, previous=request.path) }}">
+                <img class="img-rounded img-circle profile-thumbnail" src="{{ post.author.gravatar(size=40) }}">
+            </a>
+        </div>
+        <div class="post-content">
+            <div class="post-date">Posted: {{ moment(post.timestamp).fromNow() }}</div>
+            <div class="post-author">
+                <a href="{{ url_for('.user', username=post.author.username, previous=request.path) }}">{{ post.author.username }} </a>
+                {% if post.author.name %} {{ post.author.name }} {% endif %}
+                {% if post.author.is_administrator() %} [Admin] {% endif %}
+            </div>
+            <br>
+            <div class="post-body">
+              {% if post.body_html %}
+                {% if post.body_html.split("\n") | length > 8 %}
+                    {% for line in range(8) %}
+                    	{{ post.body_html.split("\n")[line] | safe }}
+                    {% endfor%}
+                    <br><a href="{{ url_for('.post', id=post.id, previous=request.path) }}">Read more...</a>
+                {% else%}
+                    {{ post.body_html | safe }}<br>
+                {% endif %}
+              {% else %}
+                    {{ post.body }}
+              {% endif %}
+            </div><br>
+            {% if current_user.is_authenticated %}
+            <div>
+                {% if not current_user.is_liked(post) %}
+                <button id="like_button{{ post.id }}" onclick="like_this('like_button{{ post.id }}', 'like{{ post.id }}', {{ post.liked_post.count() }}, {{ post.id }})" class="btn btn-default">
+                <span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Vote <span class="glyphicon glyphicon-heart-empty"></span></button>
+                {% else %}
+                <button class="btn btn-success"><span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Voted <span class="glyphicon glyphicon-heart"></span></button>
+                {% endif %}
+            </div>
+            {% endif %}
+            <div class="post-footer">
+              {% if current_user == post.author or current_user.is_administrator() %}
+              <a href="javascript:;" onclick="if(!confirm('Are you sure to delete this post?')){return false};delete_this_post({{ post.id }})">
+                 <span class="label label-danger"><span class="glyphicon glyphicon-trash"></span> Delete</span>
+              </a>
+              <a href="{{ url_for('.edit', id=post.id, previous=request.path) }}">
+                <span class="label label-warning"><span class="glyphicon glyphicon-edit"></span>Edit</span>
+              </a>
+              {% endif %}
+              <a href="{{ url_for('.post', id=post.id, previous=request.path) }}">
+               <span class="label label-default">Permalink <span class="glyphicon glyphicon-link"></span></span>
+              </a>
+              <a href="{{ url_for('.post', id=post.id, previous=request.path) }}#comments">
+                <span class="label label-success">{{ post.comments.count() }} Comments <span class="glyphicon glyphicon-comment"></span></span>
+              </a>
+            </div>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+
+<script>
+    var csrf_token = "{{ csrf_token() }}";
+    function like_this(btn, id, like_count, post_id){
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+        LIKE = document.getElementById(id);
+        BTN = document.getElementById(btn);
+        like_count += 1;
+        BTN.classList.remove("btn-default");
+        BTN.classList.add("btn-success");
+        BTN.innerHTML = '<span id="id" class="badge">' + like_count + '</span> Voted';
+        $.post( "/like/" + post_id, {});
+    }
+    function delete_this_post(post_id){
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+        $.post( "/post/delete/" + post_id , {}, function(data, status){
+                                                if(alert("Data: " + data + "\nStatus: " + status)) {location.reload(true)} else {location.reload(true)};
+                                                });
+    }
+</script>
+

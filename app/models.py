@@ -9,6 +9,7 @@ from flask_login import UserMixin, AnonymousUserMixin
 from app.exceptions import ValidationError
 from . import db, login_manager
 
+
 class Permission:
     FOLLOW = 0x01
     COMMENT = 0x02
@@ -19,6 +20,7 @@ class Permission:
     UPLOAD_MULTIPLE_FILES = 0x40
     TEACHER = 0x400
     ADMINISTER = 0x800
+
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -38,7 +40,7 @@ class Role(db.Model):
                           Permission.COMMENT |
                           Permission.WRITE_ARTICLES |
                           Permission.MODERATE_COMMENTS, False),
-            'Teacher' : (0x7ff, False),
+            'Teacher': (0x7ff, False),
             'Administrator': (0xfff, False)
         }
         for r in roles:
@@ -53,6 +55,7 @@ class Role(db.Model):
     def __repr__(self):
         return '<Role %r>' % self.name
 
+
 class Follow(db.Model):
     __tablename__ = 'follows'
     follower_id = db.Column(db.Integer, db.ForeignKey('users.id'),
@@ -61,13 +64,15 @@ class Follow(db.Model):
                             primary_key=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+
 class Like(db.Model):
     __tablename__ = 'likes'
     liker_id = db.Column(db.Integer, db.ForeignKey('users.id'),
-                            primary_key=True)
+                         primary_key=True)
     liked_post_id = db.Column(db.Integer, db.ForeignKey('posts.id'),
-                            primary_key=True)
+                              primary_key=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -84,7 +89,8 @@ class User(UserMixin, db.Model):
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
     avatar_hash = db.Column(db.String(32))
     posts = db.relationship('Post', backref='author', lazy='dynamic')
-    documents = db.relationship('Document', backref='author_data', lazy='dynamic')
+    documents = db.relationship(
+        'Document', backref='author_data', lazy='dynamic')
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
                                backref=db.backref('follower', lazy='joined'),
@@ -97,10 +103,10 @@ class User(UserMixin, db.Model):
                                 cascade='all, delete-orphan')
     comments = db.relationship('Comment', backref='author', lazy='dynamic')
     liker = db.relationship('Like',
-                               foreign_keys=[Like.liker_id],
-                               backref=db.backref('liker', lazy='joined'),
-                               lazy='dynamic',
-                               cascade='all, delete-orphan')
+                            foreign_keys=[Like.liker_id],
+                            backref=db.backref('liker', lazy='joined'),
+                            lazy='dynamic',
+                            cascade='all, delete-orphan')
 
     @staticmethod
     def generate_fake(count=100):
@@ -181,10 +187,10 @@ class User(UserMixin, db.Model):
         else:
             self.confirmed = True
         db.session.add(self)
-        
+
     def delete(self):
         db.session.delete(self)
-    
+
     def set_moderate(self):
         role_moderator_id = Role.query.filter_by(name='Moderator').first().id
         role_user_id = Role.query.filter_by(name='User').first().id
@@ -229,7 +235,8 @@ class User(UserMixin, db.Model):
             url = 'https://secure.gravatar.com/avatar'
         else:
             url = 'http://www.gravatar.com/avatar'
-        hash = self.avatar_hash or hashlib.md5(self.email.encode('utf-8')).hexdigest()
+        hash = self.avatar_hash or hashlib.md5(
+            self.email.encode('utf-8')).hexdigest()
         return '{url}/{hash}?s={size}&d={default}&r={rating}'.format(
             url=url, hash=hash, size=size, default=default, rating=rating)
 
@@ -242,6 +249,9 @@ class User(UserMixin, db.Model):
         if not self.is_liked(post):
             f = Like(post=post)
             self.liker.append(f)
+        else:
+            f = self.liker.filter_by(liked_post_id=post.id).first()
+            self.liker.remove(f)
 
     def unfollow(self, user):
         f = self.followed.filter_by(followed_id=user.id).first()
@@ -265,21 +275,21 @@ class User(UserMixin, db.Model):
         return Post.query.join(Follow, Follow.followed_id == Post.author_id).filter(Follow.follower_id == self.id)
 
     def to_json(self):
-         json_user = {
+        json_user = {
             'url': url_for('api.get_user', id=self.id, _external=True),
             'username': self.username,
             'member_since': self.member_since,
             'last_seen': self.last_seen,
             'posts': url_for('api.get_user_posts', id=self.id, _external=True),
             'followed_posts': url_for('api.get_user_followed_posts',
-                                    id=self.id, _external=True),
+                                      id=self.id, _external=True),
             'post_count': self.posts.count()
-         }
-         return json_user
+        }
+        return json_user
 
     def generate_auth_token(self, expiration):
         s = Serializer(current_app.config['SECRET_KEY'],
-                    expires_in=expiration)
+                       expires_in=expiration)
         return s.dumps({'id': self.id}).decode('ascii')
 
     @staticmethod
@@ -291,9 +301,9 @@ class User(UserMixin, db.Model):
             return None
         return User.query.get(data['id'])
 
-
     def __repr__(self):
         return '<User %r>' % self.username
+
 
 class AnonymousUser(AnonymousUserMixin):
     def can(self, permissions):
@@ -304,6 +314,7 @@ class AnonymousUser(AnonymousUserMixin):
 
 
 login_manager.anonymous_user = AnonymousUser
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -316,8 +327,8 @@ class Document(db.Model):
     name = db.Column(db.String(128))
     data = db.Column(db.LargeBinary)
     post = db.Column(db.Boolean)
-    author_id= author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
+    author_id = author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
     def delete(self):
         db.session.delete(self)
 
@@ -331,10 +342,10 @@ class Post(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     comments = db.relationship('Comment', backref='post', lazy='dynamic')
     liked_post = db.relationship('Like',
-                                    foreign_keys=[Like.liked_post_id],
-                                    backref='post',
-                                    lazy='dynamic',
-                                    cascade='all, delete-orphan')
+                                 foreign_keys=[Like.liked_post_id],
+                                 backref='post',
+                                 lazy='dynamic',
+                                 cascade='all, delete-orphan')
 
     @staticmethod
     def generate_fake(count=100):
@@ -344,7 +355,7 @@ class Post(db.Model):
         seed()
         user_count = User.query.count()
         for i in range(count):
-            u = User.query.offset(randint(0, user_count - 1 )).first()
+            u = User.query.offset(randint(0, user_count - 1)).first()
             p = Post(body=forgery_py.lorem_ipsum.sentences(randint(1, 5)),
                      timestamp=forgery_py.date.date(True),
                      author=u)
@@ -353,15 +364,16 @@ class Post(db.Model):
 
     @staticmethod
     def on_changed_body(target, value, oldvalue, initiator):
-        #allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
+        # allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
         #                'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
         #                'h1', 'h2', 'h3', 'p', 'img', 'video', 'audio', 'div']
         not_alolowed_tags = ['<script>', '</script>', '<html>', '</html>']
         target.body_html = value
         for tags in not_alolowed_tags:
             if tags in target.body_html:
-                target.body_html = target.body_html.replace(tags,"<not_allow_tag>")
-        #target.body_html = bleach.linkify(bleach.clean(
+                target.body_html = target.body_html.replace(
+                    tags, "<not_allow_tag>")
+        # target.body_html = bleach.linkify(bleach.clean(
         #    markdown(value, output_format='html5'),
         #    tags=allowed_tags, strip=True))
 
@@ -372,7 +384,7 @@ class Post(db.Model):
             'body_html': self.body_html,
             'timestamp': self.timestamp,
             'author': url_for('api.get_user', id=self.author_id,
-                            _external=True),
+                              _external=True),
             'comments': url_for('api.get_post_comments', id=self.id,
                                 _external=True),
             'comment_count': self.comments.count()
@@ -392,7 +404,9 @@ class Post(db.Model):
             raise ValidationError('post does not have a body')
         return Post(body=body)
 
+
 db.event.listen(Post.body, 'set', Post.on_changed_body)
+
 
 class Comment(db.Model):
     __tablename__ = 'comments'
@@ -434,7 +448,9 @@ class Comment(db.Model):
             raise ValidationError('comment does not have a body')
         return Comment(body=body)
 
+
 db.event.listen(Comment.body, 'set', Comment.on_changed_body)
+
 
 class Setting(db.Model):
     __tablename__ = 'settings'
@@ -442,7 +458,7 @@ class Setting(db.Model):
     name = db.Column(db.String(64))
     value = db.Column(db.Text)
     data = db.Column(db.Text, default=" ")
-    
+
     @staticmethod
     def insert_settings():
         settings = {
@@ -454,7 +470,7 @@ class Setting(db.Model):
             'CKEDITOR_PKG_TYPE_USER': ('standard', "basic|standard|full"),
             'CKEDITOR_PKG_TYPE_ADMIN': ('full', "basic|standard|full"),
             'NOT_SHOW_FILE': ('NOT_SHOW', " "),
-            'AUTO_CONFIRM': ('no', "yes|no"),
+            'AUTO_CONFIRM': ('no', "yes|no")
         }
         for r in settings:
             setting = Setting.query.filter_by(name=r).first()

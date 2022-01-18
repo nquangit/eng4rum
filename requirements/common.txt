@@ -25,7 +25,7 @@ bleach==2.1.2
 Flask-Login==0.4.1
 Flask-PageDown==0.2.2
 html5lib==1.0.1
-Markdown==2.6.10
+Markdown==3.3.4
 webencodings==0.5.1
 astroid==1.6.0
 certifi==2017.11.5
@@ -40,3 +40,5 @@ pylint==1.8.1
 urllib3==1.22
 webassets==0.12.1
 wrapt==1.10.11
+forgerypy3==0.3.1
+Flask-Limiter==1.3

@@ -1,0 +1,44 @@
+{% if current_user.can(Permission.MODERATE_COMMENTS) %}
+    {% set moderate = True %}
+{% endif %}
+<ul class="comments">
+   {% for comment in comments %}
+   <li class="comment">
+       <div class="comment-thumbnail">
+           <a href="{{ url_for('.user', username=comment.author.username, previous=request.path) }}">
+               <img class="img-rounded profile-thumbnail" src="{{ comment.author.gravatar(size=40) }}">
+           </a>
+       </div>
+       <div class="comment-content">
+           <div class="comment-date">{{ moment(comment.timestamp).fromNow() }}</div>
+           <div class="comment-author"><a href="{{ url_for('.user', username=comment.author.username, previous=request.path) }}">{{ comment.author.username }}</a>
+           {% if comment.author.name %} {{ comment.author.name }} {% endif %}
+           {% if comment.author.is_administrator() %} [Admin] {% endif %}
+           </div>
+           <div class="comment-body">
+              {% if comment.disabled %}
+              <p><i>This comment has been disabled by a moderator.</i></p>
+              {% endif %}
+              {% if moderate or not comment.disabled %}
+                {% if comment.body_html %}
+                    {{ comment.body_html | safe }}
+                {% else %}
+                    {{ comment.body }}
+                {% endif %}
+              {% endif %}
+           </div>
+           {% if moderate and not comment.author.is_administrator() %}
+             <br>
+             {% if comment.disabled %}
+             <a class="btn btn-default btn-xs" href="{{ url_for('.moderate_enable', id=comment.id, page=page) }}">Enable</a>
+             {% else %}
+             <a class="btn btn-danger btn-xs" href="{{ url_for('.moderate_disable', id=comment.id, page=page) }}">Disable</a>
+             {% endif %}
+           {% endif %}
+           {% if (comment.author.id == current_user.id or current_user.is_administrator()) and not comment.author.is_administrator()  %}
+              <a class="btn btn-danger btn-xs" href="{{ url_for('.delete_cmt', id=comment.id, page=page) }}">Delete</a>
+           {% endif %}
+       </div>
+   </li>
+   {% endfor %}
+</ul>

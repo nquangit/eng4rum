@@ -1,73 +1,581 @@
-<ul class="posts">
-    {% for post in posts %}
-    <li class="post" id="{{ post.id }}">
-        <div class="post-thumbnail">
-            <a href="{{ url_for('.user', username=post.author.username) }}">
-                <img class="img-rounded img-circle profile-thumbnail" src="{{ post.author.gravatar(size=40) }}">
-            </a>
-        </div>
-        <div class="post-content">
-            <div class="post-date">Posted: {{ moment(post.timestamp).fromNow() }}</div>
-            <div class="post-author">
-                <a href="{{ url_for('.user', username=post.author.username) }}">{{ post.author.username }} </a>
-                {% if post.author.name %} {{ post.author.name }} {% endif %}
-                {% if post.author.is_administrator() %} [Admin] {% endif %}
-            </div>
-            <br>
-            <div class="post-body">
-              {% if post.body_html %}
-                {% if post.body_html.split("\n") | length > 8 %}
-                    {% for line in range(8) %}
-                    	{{ post.body_html.split("\n")[line] | safe }}
-                    {% endfor%}
-                    <br><a href="{{ url_for('.post', id=post.id) }}">Read more...</a>
-                {% else%}
-                    {{ post.body_html | safe }}<br>
-                {% endif %}
-              {% else %}
-                    {{ post.body }}
-              {% endif %}
-            </div>
-            {% if current_user.is_authenticated %}
-            <div>
-                {% if not current_user.is_liked(post) %}
-                <button id="like_button{{ post.id }}" onclick="like_this('like_button{{ post.id }}', 'like{{ post.id }}', {{ post.liked_post.count() }}, {{ post.id }})" class="btn btn-default">
-                <span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Vote <span class="glyphicon glyphicon-heart-empty"></span></button>
-                {% else %}
-                <button class="btn btn-success"><span id="like{{ post.id }}" class="badge">{{ post.liked_post.count() }}</span> Voted <span class="glyphicon glyphicon-heart"></span></button>
-                {% endif %}
-            </div>
-            {% endif %}
-            <div class="post-footer">
-              {% if current_user == post.author or current_user.is_administrator() %}
-              <a href="{{ url_for('main.delete_post', id=post.id) }}">
-                <span class="label label-danger"><span class="glyphicon glyphicon-trash"></span> Delete</span>
-              </a>
-              <a href="{{ url_for('.edit', id=post.id) }}">
-                <span class="label label-warning"><span class="glyphicon glyphicon-edit"></span>Edit</span>
-              </a>
-              {% endif %}
-              <a href="{{ url_for('.post', id=post.id) }}">
-               <span class="label label-default">Permalink <span class="glyphicon glyphicon-link"></span></span>
-              </a>
-              <a href="{{ url_for('.post', id=post.id) }}#comments">
-                <span class="label label-success">{{ post.comments.count() }} Comments <span class="glyphicon glyphicon-comment"></span></span>
-              </a>
-            </div>
-        </div>
-    </li>
-    {% endfor %}
-</ul>
+<style>
 
+.mini-profile-widget .image-container .avatar {
+  width: 180px;
+  height: 180px;
+  display: block;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: white;
+  padding: 4px;
+  border: 1px solid #dddddd;
+}
+
+/* Component: Panel */
+.panel {
+  border-radius: 0;
+  margin-bottom: 30px;
+}
+.panel.solid-color {
+  color: white;
+}
+.panel .panel-heading {
+  border-radius: 0;
+  position: relative;
+}
+.panel .panel-heading > .controls {
+  position: absolute;
+  right: 10px;
+  top: 12px;
+}
+.panel .panel-heading > .controls .nav.nav-pills {
+  margin: -8px 0 0 0;
+}
+.panel .panel-heading > .controls .nav.nav-pills li a {
+  padding: 5px 8px;
+}
+.panel .panel-heading .clickable {
+  margin-top: 0px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.panel .panel-heading.no-heading-border {
+  border-bottom-color: transparent;
+}
+.panel .panel-heading .left {
+  float: left;
+}
+.panel .panel-heading .right {
+  float: right;
+}
+.panel .panel-title {
+  font-size: 16px;
+  line-height: 20px;
+}
+.panel .panel-title.panel-title-sm {
+  font-size: 18px;
+  line-height: 28px;
+}
+.panel .panel-title.panel-title-lg {
+  font-size: 24px;
+  line-height: 34px;
+}
+.panel .panel-body {
+  font-size: 13px;
+}
+.panel .panel-body > .body-section {
+  margin: 0px 0px 20px;
+}
+.panel .panel-body > .body-section > .section-heading {
+  margin: 0px 0px 5px;
+  font-weight: bold;
+}
+.panel .panel-body > .body-section > .section-content {
+  margin: 0px 0px 10px;
+}
+.panel-white {
+  border: 1px solid #dddddd;
+}
+.panel-white > .panel-heading {
+  color: #333;
+  background-color: #fff;
+  border-color: #ddd;
+}
+.panel-white > .panel-footer {
+  background-color: #fff;
+  border-color: #ddd;
+}
+.panel-primary {
+  border: 1px solid #dddddd;
+}
+.panel-purple {
+  border: 1px solid #dddddd;
+}
+.panel-purple > .panel-heading {
+  color: #fff;
+  background-color: #8e44ad;
+  border: none;
+}
+.panel-purple > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-light-purple {
+  border: 1px solid #dddddd;
+}
+.panel-light-purple > .panel-heading {
+  color: #fff;
+  background-color: #9b59b6;
+  border: none;
+}
+.panel-light-purple > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-blue,
+.panel-info {
+  border: 1px solid #dddddd;
+}
+.panel-blue > .panel-heading,
+.panel-info > .panel-heading {
+  color: #fff;
+  background-color: #2980b9;
+  border: none;
+}
+.panel-blue > .panel-heading .panel-title a:hover,
+.panel-info > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-light-blue {
+  border: 1px solid #dddddd;
+}
+.panel-light-blue > .panel-heading {
+  color: #fff;
+  background-color: #3498db;
+  border: none;
+}
+.panel-light-blue > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-green,
+.panel-success {
+  border: 1px solid #dddddd;
+}
+.panel-green > .panel-heading,
+.panel-success > .panel-heading {
+  color: #fff;
+  background-color: #27ae60;
+  border: none;
+}
+.panel-green > .panel-heading .panel-title a:hover,
+.panel-success > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-light-green {
+  border: 1px solid #dddddd;
+}
+.panel-light-green > .panel-heading {
+  color: #fff;
+  background-color: #2ecc71;
+  border: none;
+}
+.panel-light-green > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-orange,
+.panel-warning {
+  border: 1px solid #dddddd;
+}
+.panel-orange > .panel-heading,
+.panel-warning > .panel-heading {
+  color: #fff;
+  background-color: #e82c0c;
+  border: none;
+}
+.panel-orange > .panel-heading .panel-title a:hover,
+.panel-warning > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-light-orange {
+  border: 1px solid #dddddd;
+}
+.panel-light-orange > .panel-heading {
+  color: #fff;
+  background-color: #ff530d;
+  border: none;
+}
+.panel-light-orange > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-red,
+.panel-danger {
+  border: 1px solid #dddddd;
+}
+.panel-red > .panel-heading,
+.panel-danger > .panel-heading {
+  color: #fff;
+  background-color: #d40d12;
+  border: none;
+}
+.panel-red > .panel-heading .panel-title a:hover,
+.panel-danger > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-light-red {
+  border: 1px solid #dddddd;
+}
+.panel-light-red > .panel-heading {
+  color: #fff;
+  background-color: #ff1d23;
+  border: none;
+}
+.panel-light-red > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-pink {
+  border: 1px solid #dddddd;
+}
+.panel-pink > .panel-heading {
+  color: #fff;
+  background-color: #fe31ab;
+  border: none;
+}
+.panel-pink > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-light-pink {
+  border: 1px solid #dddddd;
+}
+.panel-light-pink > .panel-heading {
+  color: #fff;
+  background-color: #fd32c0;
+  border: none;
+}
+.panel-light-pink > .panel-heading .panel-title a:hover {
+  color: #f0f0f0;
+}
+.panel-group .panel {
+  border-radius: 0;
+}
+.panel-group .panel + .panel {
+  margin-top: 0;
+  border-top: 0;
+}
+
+/* Component: Posts */
+.post .post-heading {
+  height: 95px;
+  padding: 20px 15px;
+}
+.post .post-heading .avatar {
+  width: 60px;
+  height: 60px;
+  display: block;
+  margin-right: 15px;
+}
+.post .post-heading .meta .title {
+  margin-bottom: 0;
+}
+.post .post-heading .meta .title a {
+  color: black;
+}
+.post .post-heading .meta .title a:hover {
+  color: #aaaaaa;
+}
+.post .post-heading .meta .time {
+  margin-top: 8px;
+  color: #999;
+}
+.post .post-description {
+  padding: 15px;
+}
+.post .post-description .stats {
+  margin-top: 20px;
+}
+.post .post-description .stats .stat-item {
+  display: inline-block;
+  margin-right: 15px;
+}
+.post .post-description .stats .stat-item .icon {
+  margin-right: 8px;
+}
+.post .post-description .post-body img{
+  width: 100% !important;
+  height: auto !important;
+}
+.post .post-footer {
+  border-top: 1px solid #ddd;
+  padding: 15px;
+}
+.post .post-footer .input-group-addon a {
+  color: #454545;
+}
+.post .post-footer .comments-list {
+  padding: 0;
+  margin-top: 20px;
+  list-style-type: none;
+}
+.post .post-footer .comments-list .comment {
+  display: block;
+  width: 100%;
+  margin: 20px 0;
+}
+.post .post-footer .comments-list .comment .avatar {
+  width: 35px;
+  height: 35px;
+}
+.post .post-footer .comments-list .comment .comment-heading {
+  display: block;
+  width: 100%;
+}
+.post .post-footer .comments-list .comment .comment-heading .user {
+  font-size: 14px;
+  font-weight: bold;
+  display: inline;
+  margin-top: 0;
+  margin-right: 10px;
+}
+.post .post-footer .comments-list .comment .comment-heading .time {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 0;
+  display: inline;
+}
+.post .post-footer .comments-list .comment .comment-body {
+  margin-left: 50px;
+}
+.post .post-footer .comments-list .comment > .comments-list {
+  margin-left: 50px;
+}
+
+.fluid-width-video-wrapper {
+    width: 100%;
+    position: relative;
+    padding: 0;
+}
+
+.fluid-width-video-wrapper iframe, .fluid-width-video-wrapper object, .fluid-width-video-wrapper embed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+.horizontal-dots {
+    cursor: pointer;
+    width: 19px;
+    height: 14px;
+    background-image: radial-gradient(circle, black 1.5px, transparent 2.0px);
+    background-size: 6px 16px;
+    background-color: #EEEEEE;
+    border-top: 1px solid #CCCCCC;
+    border-right: 1px solid #CCCCCC;
+    border-bottom: 1px solid #CCCCCC;
+    border-left: 1px solid #CCCCCC;
+    border-radius: 0.2em;
+    margin-left: 14px;
+}
+.horizontal-dots:hover {
+   border: solid .2px #0198E1;
+   
+}
+</style>
+
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+<div class="container-fluid">
+<div class="row">
+    <div class="col-sm-8 col-sm-offset-2">
+        <div class="row">
+            {% for post in posts %}
+            <div class="col-sm-12">
+                <div class="panel panel-white post">
+                    <div class="post-heading">
+                        <div class="pull-left image">
+                          <a href="{{ url_for('.user', username=post.author.username, previous=request.path) }}">
+                            <img src="{{ post.author.gravatar(size=64) }}" class="img-circle avatar" alt="user profile image">
+                          </a>
+                        </div>
+                        <div class="pull-left meta">
+                         <div class="dropdown" style="position: absolute;top: 30px;right: 40px;">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                               <div class="horizontal-dots"></div>
+                            </a>
+                            <ul class="dropdown-menu">
+                             <li>
+                                <a href="{{ url_for('.edit', id=post.id, previous=request.path) }}"><span class="glyphicon glyphicon-cog"></span> Edit</a>
+                             </li>
+                             <li>
+                               <a href="javascript:;" onclick="if(!confirm('Are you sure to delete this post?')){return false};delete_this_post({{ post.id }})">
+                                  <span class="glyphicon glyphicon-trash"></span> Delete
+                               </a>
+                             </li>
+                    </ul>
+                         </div>
+                            <div class="title h5">
+                                <a href="{{ url_for('.user', username=post.author.username, previous=request.path) }}"><b>{{ post.author.username }}</b></a>
+                                made a post.
+                            </div>
+                            <h6 class="text-muted time">{{ moment(post.timestamp).fromNow() }}</h6>
+                        </div>
+                    </div>
+                    <div class="post-description">
+                    <!--<div class="post-image">
+                       <p><img src="/view/THM-ROOL394YMP.png"></p>
+                     </div>-->
+<!--post body-->      <div class="post-body">
+                        {% if post.body_html %}
+                          {% if post.body_html.split("\n") | length > 8 %}
+                            {% for line in range(8) %}
+                              {{ post.body_html.split("\n")[line] | safe }}
+                            {% endfor%}
+                            <br><a href="{{ url_for('.post', id=post.id, previous=request.path) }}">Read more...</a>
+                          {% else%}
+                            {{ post.body_html | safe }}<br>
+                          {% endif %}
+                        {% else %}
+                          {{ post.body }}
+                        {% endif %}
+<!--post body-->      </div>
+                        <div class="stats">
+                         {% if current_user.is_authenticated %}
+                          {% if not current_user.is_liked(post) %}
+                            <a id="like_button{{ post.id }}" href="javascript:like_this('like_button{{ post.id }}', {{ post.id }});" class="btn btn-default stat-item">
+                                <i class="fa fa-thumbs-up icon"></i>{{ post.liked_post.count() }}
+                            </a>
+                          {% else %}
+                            <a id="like_button{{ post.id }}" href="javascript:like_this('like_button{{ post.id }}', {{ post.id }});" class="btn btn-success stat-item">
+                                <i class="fa fa-thumbs-up icon"></i>{{ post.liked_post.count() }}
+                            </a>
+                          {% endif %}
+                         {% endif %}
+                            <a href="{{ url_for('.post', id=post.id, previous=request.path) }}#comments" class="btn btn-default stat-item">
+                                <i class="glyphicon glyphicon-comment"></i> {{ post.comments.count() }} Comments
+                            </a>
+                            <a href="{{ url_for('.post', id=post.id, previous=request.path) }}" class="btn btn-default btn-sm stat-item" style="float: right;">
+                                <i class="glyphicon glyphicon-link"></i> Permalink
+                            </a>
+                            <!--
+                            <a href="javascript:void(0);" class="btn btn-default stat-item">
+                                <i class="fa fa-share icon"></i>
+                            </a>
+                            -->
+                        </div>
+                    </div>
+                    
+                    <div class="post-footer">
+                      {% if current_user.is_authenticated %}
+                        <div>
+                            <span style="float: left;" class="text-danger" id="notification_{{ post.id }}"></span>
+                        </div><br>
+                        <div class="input-group"> 
+                            <input id="comment_post_{{ post.id }}" class="form-control" placeholder="Add a comment" type="text">
+                            <span class="input-group-addon">
+                                <a href="javascript:cmt({{ post.id }});"><i class="fa fa-edit"></i></a>  
+                            </span>
+                        </div>
+                      {% endif %}
+                        {% set comments = cmt[posts.index(post)] %}
+                        {% for comment in comments %}
+                          {% if comment %}
+                          <ul class="comments-list" id="comment-list-{{ post.id }}">
+                              <li class="comment" >
+                                  <a class="pull-left" href="{{ url_for('.user', username=comment.author.username, previous=request.path) }}">
+                                      <img class="avatar" src="{{ comment.author.gravatar(size=64) }}" alt="avatar">
+                                  </a>
+                                  <div class="comment-body text-left">
+                                      <div class="comment-heading">
+                                          <a href="{{ url_for('.user', username=comment.author.username, previous=request.path) }}">
+                                              <h4 class="user">{{ comment.author.username }}</h4>
+                                          </a>
+                                          <h5 class="time">{{ moment(comment.timestamp).fromNow() }}</h5>
+                                      </div>
+                                      <p>{{ comment.body_html }}</p>
+                                  </div>
+                              </li>
+                          </ul>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+    </div>
+
+</div>
+</div>
+
+{% if current_user.is_authenticated %}
 <script>
-    function like_this(btn, id, like_count, post_id){
-        LIKE = document.getElementById(id);
+    var csrf_token = "{{ csrf_token() }}";
+    function like_this(btn, post_id){
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
         BTN = document.getElementById(btn);
-        like_count += 1;
-        BTN.classList.remove("btn-default");
-        BTN.classList.add("btn-success");
-        BTN.innerHTML = '<span id="id" class="badge">' + like_count + '</span> Voted';
-        $.post( "/like/" + post_id, {});
+        $.ajax({
+          url: "{{ url_for('main.like') }}",
+          type:"POST",
+          headers: { 
+             "Accept" : "application/json; charset=utf-8"
+          },
+          contentType:"application/json; charset=utf-8",
+          data: JSON.stringify({ post_id: post_id }),
+          dataType:"json"
+         }).done(function(data){ 
+               if (data["like"]) 
+                   {BTN.classList.remove("btn-default");
+                   BTN.classList.add("btn-success");}
+               else {BTN.classList.remove("btn-success");
+                    BTN.classList.add("btn-default");}
+               BTN.innerHTML = '<i class="fa fa-thumbs-up icon"></i>' + data["liked_count"] })
+          .fail(function(errMsg) {alert(errMsg);});
+    }
+    function delete_this_post(post_id){
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+        $.ajax({
+          url: "{{ url_for('main.delete_post') }}",
+          type:"POST",
+          headers: { 
+             "Accept" : "application/json; charset=utf-8"
+          },
+          contentType:"application/json; charset=utf-8",
+          data: JSON.stringify({ post_id: post_id }),
+          dataType:"text",
+        }).done(function(data, status){ alert("Data: " + data + "\nStatus: " + status); location.reload(true); })
+          .fail(function(errMsg) {alert(errMsg);});
+    }
+    function cmt(post_id){
+    $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+    var body = document.getElementById("comment_post_" + post_id.toString()).value
+    if (body.trim().length === 0){ document.getElementById("notification_" + post_id.toString()).innerHTML="This is required";
+                                   setTimeout(function(){ document.getElementById("notification_" + post_id.toString()).innerHTML="" }, 5000);}
+    else{
+    $.ajax({
+          url: "{{ url_for('main.comment') }}",
+          type:"POST",
+          headers: { 
+             "Accept" : "application/json; charset=utf-8"
+          },
+          contentType:"application/json; charset=utf-8",
+          data: JSON.stringify({ post_id: post_id, comment_body: body}),
+          dataType:"text",
+        }).done(function(data, status){
+            var html = "";
+            html += '<li class="comment" >';
+            html += '<a class="pull-left" href="{{ url_for('.user', username=current_user.username, previous=request.path) }}">';
+            html += '<img class="avatar" src="{{ current_user.gravatar(size=64) }}" alt="avatar">';
+            html += '</a>';
+            html += '<div class="comment-body text-left">';
+            html += '<div class="comment-heading">';
+            html += '<a href="' + '{{ url_for('.user', username=current_user.username, previous=request.path) }}' + '">';
+            html += '<h4" class="user">{{ current_user.username }}</h4>';
+            html += '</a>';
+            html += '<h5 class="time">' +  moment(data['timestamp']).fromNow() + '</h5>';
+            html += '</div>';
+            html += '<p>' + body + '</p>';
+            html += '</div>';
+            html += '</li>';
+            $('#comment-list-' + post_id).prepend(html);
+            document.getElementById("comment_post_" + post_id.toString()).value="";
+                                        })
+          .fail(function(errMsg) {alert(errMsg);});
+    }
     }
 </script>
-
+{% endif %}
