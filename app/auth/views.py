@@ -73,7 +73,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         token = user.generate_confirmation_token()
-        send_email(user.email, 'Confirm Your Account',
+        #send_email(user.email, 'Confirm Your Account',
                    'auth/email/confirm', user=user, token=token)
         flash('You can now login.')
         return redirect(url_for('auth.login'))
@@ -96,7 +96,7 @@ def confirm(token):
 @login_required
 def resend_confirmation():
     token = current_user.generate_confirmation_token()
-    send_email(current_user.email, 'Confirm Your Account',
+    #send_email(current_user.email, 'Confirm Your Account',
                'auth/email/confirm', user=current_user, token=token)
     flash('A new confirmation email has been sent to you by email')
     return redirect(url_for('main.index'))
@@ -126,7 +126,7 @@ def password_reset_request():
         user = User.query.filter_by(email=form.email.data).first()
         if user:
             token = user.generate_reset_token()
-            send_email(user.email, 'Reset Your Password',
+            #send_email(user.email, 'Reset Your Password',
                        'auth/email/reset_password', user=user, token=token,
                        next=request.args.get('next'))
         flash('An email with instructions to reset your password has been sent to you.')
